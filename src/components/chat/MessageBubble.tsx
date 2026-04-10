@@ -25,7 +25,7 @@ interface Props { message: Message; showAvatar: boolean; }
 const formatTime  = (d: string) => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const formatBytes = (b: number) => b < 1024 ? `${b} B` : b < 1024*1024 ? `${(b/1024).toFixed(1)} KB` : `${(b/(1024*1024)).toFixed(1)} MB`;
 
-// ── File type icon ────────────────────────────────────────────────────────────
+// ── File type icon ────────
 const FileIcon = ({ mime }: { mime?: string }) => {
   if (!mime)                    return <FileText size={20} className="text-primary" />;
   if (mime.startsWith('image/'))return <Image   size={20} className="text-primary" />;
@@ -34,7 +34,7 @@ const FileIcon = ({ mime }: { mime?: string }) => {
   return <FileText size={20} className="text-primary" />;
 };
 
-// ── SVG Circle Progress ────────────────────────────────────────────────────────
+// ── SVG Circle Progress ──────
 // Kaise kaam karta hai:
 //   radius = 18, circumference = 2 * pi * 18 = 113.1px
 //   strokeDasharray  = 113.1  (poori circle ki length)
@@ -102,13 +102,13 @@ const useStreamDownload = () => {
       const contentLength = response.headers.get('Content-Length');
       const total= contentLength ? parseInt(contentLength, 10) : 0;
       const reader= response.body!.getReader();
-      const chunks: ArrayBuffer[] = [];
+      const chunks:  Uint8Array<ArrayBufferLike>[] = [];
       let received = 0;
 
       // Step 4: Stream padhte jao — chunk by chunk
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;                         // download complete
+        if (done) break;// download complete
         chunks.push(value);
         received += value.length;
         if (total > 0) {
@@ -118,7 +118,7 @@ const useStreamDownload = () => {
       }
 
       // Step 5: Saare chunks ek Blob mein jodo
-      const blob    = new Blob(chunks);
+      const blob = new Blob(chunks as BlobPart[]);  
       const blobUrl = URL.createObjectURL(blob);
 
       // Step 6: Temporary <a> tag se browser Save dialog trigger karo
@@ -142,7 +142,7 @@ const useStreamDownload = () => {
   return { download, progress, downloading, downloaded };
 };
 
-// ── Download Button — 3 states ────────────────────────────────────────────────
+// ── Download Button — 3 states ──
 const DownloadBtn = ({
   downloading, downloaded, progress, onClick,
 }: {
@@ -167,7 +167,7 @@ const DownloadBtn = ({
   );
 };
 
-// ── Image Lightbox ────────────────────────────────────────────────────────────
+// ── Image Lightbox ─
 const ImageLightbox = ({
   src, fileName, onClose, messageId, isOwn,
 }: {
@@ -209,7 +209,7 @@ const ImageLightbox = ({
   );
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
+//--------
 const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
   const { user }                         = useAuth();
   const { updateMessage, removeMessage } = useChat();
