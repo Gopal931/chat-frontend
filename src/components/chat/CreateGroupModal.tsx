@@ -18,10 +18,10 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
   const { onlineUsers, fetchConnectedUsers } = useChat();
 
   const [groupName, setGroupName]   = useState('');
-  const [selected, setSelected]     = useState<Set<string>>(new Set());
-  const [search, setSearch]         = useState('');
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
+  const [selected, setSelected]= useState<Set<string>>(new Set());
+  const [search, setSearch]= useState('');
+  const [loading, setLoading]= useState(false);
+  const [error, setError]= useState('');
 
   // Refresh connected users every time modal opens
   useEffect(() => {

@@ -8,7 +8,6 @@ import { MESSAGES } from '@/api/endpoints';
 import { sendMessageSchema } from '@/validations/message.validation';
 
 export const useSendMessage = (conversationId: string | null) => {
-  const { appendMessage } = useChat();
   const { socket }= useSocket();
   const { user }= useAuth();
 
@@ -22,14 +21,11 @@ export const useSendMessage = (conversationId: string | null) => {
   const uploadingRef = useRef(false);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isTypingRef      = useRef(false);
+  const isTypingRef= useRef(false);
 
   // conversationId ko ref mein store karo — deps array mein nahi chahiye
   const conversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
-
-  const appendMessageRef = useRef(appendMessage);
-  appendMessageRef.current = appendMessage;
 
   const emitTyping = useCallback(() => {
     if (!socket || !conversationIdRef.current || !user) return;
@@ -52,71 +48,74 @@ export const useSendMessage = (conversationId: string | null) => {
     }
   }, [socket]);
 
-  // ── Text send — stable function, no state in deps ──────────────────────────
-  const send = useCallback(async (text: string) => {
-    if (!conversationIdRef.current || sendingRef.current) return;
-    const result = sendMessageSchema.safeParse({ conversationId: conversationIdRef.current, text });
-    if (!result.success) return { error: result.error.errors[0].message };
-    stopTyping();
-    sendingRef.current = true;
-    setSending(true);
-    try {
-      const { data } = await api.post(MESSAGES.SEND, {
-        conversationId: conversationIdRef.current,
-        text,
-        content: text,
-      });
-      appendMessageRef.current(data);
-    } finally {
-      sendingRef.current = false;
-      setSending(false);
-    }
-  }, [stopTyping]); // ← only stopTyping needed, everything else via refs
+  // ── Text send — stable function, no state in deps ─────
+ const send = useCallback(async (text: string) => {
+  if (!conversationIdRef.current || sendingRef.current) return;
 
-  // ── File send — stable function, no state in deps ──────────────────────────
+  const result = sendMessageSchema.safeParse({
+    conversationId: conversationIdRef.current,
+    text
+  });
+
+  if (!result.success) {
+    return { error: result.error.errors[0].message };
+  }
+  stopTyping();
+  sendingRef.current = true;
+  setSending(true);
+
+  try {
+    await api.post(MESSAGES.SEND, {
+      conversationId: conversationIdRef.current,
+      text,
+      content: text,
+    });
+
+  } finally {
+    sendingRef.current = false;
+    setSending(false);
+  }
+}, [stopTyping]); // ← only stopTyping needed, everything else via refs
+
+  // ── File send — stable function, no state in deps ─────
   const sendFile = useCallback(async (file: File): Promise<void> => {
-    if (!conversationIdRef.current || uploadingRef.current) return;
+  if (!conversationIdRef.current || uploadingRef.current) return;
 
-    uploadingRef.current = true;
-    setUploading(true);
+  uploadingRef.current = true;
+  setUploading(true);
+  setUploadProgress(0);
+
+  try {
+    const { data: urlData } = await api.get(MESSAGES.UPLOAD_URL, {
+      params: {
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+      },
+    });
+
+    await axios.put(urlData.uploadUrl, file, {
+      headers: { 'Content-Type': file.type },
+      onUploadProgress: (progressEvent) => {
+        const total = progressEvent.total ?? file.size;
+        const pct = Math.round((progressEvent.loaded / total) * 100);
+        setUploadProgress(pct);
+      },
+    });
+
+    await api.post(MESSAGES.SAVE_FILE, {
+      conversationId: conversationIdRef.current,
+      fileKey: urlData.fileKey,
+      fileName: file.name,
+      fileSize: file.size,
+      fileMimeType: file.type,
+    });
+  } finally {
+    uploadingRef.current = false;
+    setUploading(false);
     setUploadProgress(0);
-
-    try {
-      // STEP 1: Presigned PUT URL maango
-      const { data: urlData } = await api.get(MESSAGES.UPLOAD_URL, {
-        params: {
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-        },
-      });
-
-      // STEP 2: Seedha S3 mein upload — backend se file nahi guzri
-      await axios.put(urlData.uploadUrl, file, {
-        headers: { 'Content-Type': file.type },
-        onUploadProgress: (progressEvent) => {
-          const total = progressEvent.total ?? file.size;
-          const pct   = Math.round((progressEvent.loaded / total) * 100);
-          setUploadProgress(pct);
-        },
-      });
-
-      // STEP 3: Sirf metadata backend ko bhejo
-      const { data: message } = await api.post(MESSAGES.SAVE_FILE, {
-        conversationId: conversationIdRef.current,
-        fileKey:        urlData.fileKey,
-        fileName:       file.name,
-        fileSize:       file.size,
-        fileMimeType:   file.type,
-      });
-
-      appendMessageRef.current(message);
-    } finally {
-      uploadingRef.current = false;
-      setUploading(false);
-      setUploadProgress(0);
-    }
-  }, []); // ← empty deps — sab kuch refs se aata hai, no re-renders
+  }
+}, []); // ← empty deps — sab kuch refs se aata hai, no re-renders
 
   return { send, sendFile, sending, uploading, uploadProgress, emitTyping };
 };

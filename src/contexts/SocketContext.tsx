@@ -32,7 +32,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     s.on('connect_error',(e) => console.error('[Socket] Error:', e.message));
 
     _setSocket(s);
-    setSocket(s);
+    setSocket(s);  
 
     return () => { _setSocket(null); s.disconnect(); };
   }, [isAuthenticated, user?.token, _setSocket]);

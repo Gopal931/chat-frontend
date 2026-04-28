@@ -4,13 +4,13 @@
  */
 import { z } from 'zod';
 
-// ── Send a message ─────────────────────────────────────────────────────────────
+// ── Send a message ───────
 export const sendMessageSchema = z.object({
   conversationId: z.string().min(1, 'Conversation is required'),
   text: z.string().min(1, 'Message cannot be empty').max(2000, 'Message is too long'),
 });
 
-// ── Create a group ─────────────────────────────────────────────────────────────
+// ── Create a group ─────────
 export const createGroupSchema = z.object({
   groupName: z
     .string({ required_error: 'Group name is required' })
@@ -22,6 +22,6 @@ export const createGroupSchema = z.object({
     .min(1, 'Add at least 1 other member'),
 });
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// ── Types ────
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type CreateGroupInput = z.infer<typeof createGroupSchema>;

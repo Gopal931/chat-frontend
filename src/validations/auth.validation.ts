@@ -9,7 +9,7 @@
  */
 import { z } from 'zod';
 
-// ── Register ──────────────────────────────────────────────────────────────────
+// ── Register ─────
 export const registerSchema = z.object({
   username: z
     .string({ required_error: 'Username is required' })
@@ -24,7 +24,7 @@ export const registerSchema = z.object({
     .min(6, 'Password must be at least 6 characters'),
 });
 
-// ── Login ─────────────────────────────────────────────────────────────────────
+// ── Login ────
 export const loginSchema = z.object({
   email: z
     .string({ required_error: 'Email is required' })

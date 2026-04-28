@@ -1,10 +1,9 @@
 import axios from 'axios';
 
-// Read base URL from .env file
-// If this logs "undefined", your .env file is missing or Vite wasn't restarted
+
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// console.log('[API] Base URL:', BASE_URL);
+// console.log(BASE_URL);
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -30,14 +29,12 @@ api.interceptors.response.use(
       window.location.pathname === '/signup';
  
     if (is401 && !isAuthRoute) {
-      // Session expired on a protected page — clear and redirect
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
  
-    // For all other cases (including wrong password on /login),
-    // just reject the promise so the catch block in the page handles it
+    // for other case/error just reject the promise so the catch block in the page handles it
     return Promise.reject(err);
   }
 );

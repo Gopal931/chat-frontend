@@ -11,12 +11,12 @@ export const useFriends = () => {
   const { pendingRequests, removePendingRequest, fetchConversations, fetchConnectedUsers } = useChat();
   const { socket } = useSocket();
 
-  const [searchResult, setSearchResult]       = useState<User | null>(null);
-  const [searching, setSearching]             = useState(false);
-  const [searchError, setSearchError]         = useState('');
+  const [searchResult, setSearchResult] = useState<User | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [sentRequestIds, setSentRequestIds]   = useState<Set<string>>(new Set());
-  const [sendingId, setSendingId]             = useState<string | null>(null);
-  const [respondingId, setRespondingId]       = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
 
   const searchByEmail = useCallback(async (email: string) => {
     if (!email.trim()) return;

@@ -21,14 +21,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (stored && token) return { ...JSON.parse(stored), token };
     } catch {}
     return null;
-  });
+  });   
 
   const login = useCallback(async (payload: LoginPayload) => {
     const { data } = await api.post<AuthResponse>(AUTH.LOGIN, payload);
-    localStorage.setItem('token', data.token);
+    localStorage.setItem('token', data.token);             
     localStorage.setItem('user', JSON.stringify(data.user));
-    setUser({ ...data.user, token: data.token });
-  }, []);
+    setUser({ ...data.user, token: data.token });           
+  }, []);         
 
   const register = useCallback(async (payload: RegisterPayload) => {
     const { data } = await api.post<AuthResponse>(AUTH.REGISTER, payload);

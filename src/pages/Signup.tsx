@@ -12,18 +12,18 @@ const getStrength = (pw: string) => {
   if (!pw) return { level: 0, label: '', color: '' };
   if (pw.length < 6)  return { level: 1, label: 'Weak',   color: 'bg-destructive' };
   if (pw.length < 10) return { level: 2, label: 'Good',   color: 'bg-amber-500' };
-  return               { level: 3, label: 'Strong', color: 'bg-emerald-500' };
+  return { level: 3, label: 'Strong', color: 'bg-emerald-500' };
 };
 
 const Signup: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm]               = useState<RegisterInput>({ username: '', email: '', password: '' });
+  const [form, setForm] = useState<RegisterInput>({ username: '', email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterInput, string>>>({});
-  const [apiError, setApiError]       = useState('');
-  const [showPw, setShowPw]           = useState(false);
-  const [loading, setLoading]         = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,7 +34,7 @@ const Signup: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setApiError(''); // clear on new submit attempt
+    setApiError(''); //clear  on new submit attempt
 
     const result = registerSchema.safeParse(form);
     if (!result.success) {
@@ -53,8 +53,7 @@ const Signup: React.FC = () => {
       navigate('/chat');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
-      // Show backend message if available, otherwise show the raw error
-      const msg = axiosErr.response?.data?.message ?? axiosErr.message ?? 'Registration failed';
+      const msg = axiosErr.response?.data?.message ?? axiosErr.message ?? 'Registration failed';     // Show backend message if available, otherwise show the raw error
       setApiError(msg);
     } finally {
       setLoading(false);

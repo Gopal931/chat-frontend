@@ -34,7 +34,7 @@ const EmptyState = () => (
   </div>
 );
 
-// ── Scroll helper — container ko bottom par le jao ───────────────────────────
+// ── Scroll helper — container ko bottom par le jao ────────
 const scrollToBottom = (el: HTMLDivElement | null, smooth = false) => {
   if (!el) return;
   if (smooth) {
@@ -45,17 +45,17 @@ const scrollToBottom = (el: HTMLDivElement | null, smooth = false) => {
 };
 
 const ChatWindow: React.FC<Props> = ({ onBack }) => {
-  const { user }                         = useAuth();
+  const { user } = useAuth();
   const { activeConversation, onlineUsers } = useChat();
   const { messages, loadingMessages }    = useMessages(activeConversation?._id ?? null);
-  const { socket }                       = useSocket();
+  const { socket } = useSocket();
 
   const containerRef  = useRef<HTMLDivElement>(null);
-  const convIdRef     = useRef<string | null>(null);  // track active conversation
+  const convIdRef = useRef<string | null>(null);  // track active conversation
   const isNewMsgRef   = useRef(false);                // was it a new message (not load)
 
-  const partner       = activeConversation?.participants.find((p) => p._id !== user?._id);
-  const displayName   = activeConversation?.isGroup
+  const partner = activeConversation?.participants.find((p) => p._id !== user?._id);
+  const displayName = activeConversation?.isGroup
     ? (activeConversation.groupName || 'Group')
     : (partner?.username || 'Unknown');
   const isPartnerOnline = !activeConversation?.isGroup && partner && onlineUsers.includes(partner._id);
@@ -80,7 +80,7 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
     }
   }, [loadingMessages]); // sirf loadingMessages pe — messages array pe nahi
 
-  // ── New message aaya (send/receive) — smooth scroll ─────────────────────────
+  // ── New message aaya (send/receive) — smooth scroll ──────
   useEffect(() => {
     const currentConvId = activeConversation?._id ?? null;
 
@@ -95,7 +95,7 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
     if (messages.length > 0 && !loadingMessages) {
       scrollToBottom(containerRef.current, true); // smooth
     }
-  }, [messages.length]); // sirf length pe — content change pe nahi
+  }, [messages.length]);//sirf length pe — content change pe nahi
 
   if (!activeConversation) return <EmptyState />;
 

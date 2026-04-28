@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff } from 'lucide-react';
+import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff, Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/hooks/useConversations';
 import { useFriends } from '@/hooks/useFriends';
@@ -24,7 +24,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'chats' | 'people';
+type Tab = 'chats' | 'people' | 'Requests';
 
 const SkeletonItem = () => (
   <div className="flex items-center gap-3 px-3 py-3 animate-pulse">
@@ -60,7 +60,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
     setActiveConversation(conv);
     onSelectConversation(conv);
     onClose();
-  };
+  };           
 
   return (
     <>
@@ -133,7 +133,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
 
         {/* Tabs */}
         <div className="flex border-b border-border">
-          {(['chats', 'people'] as Tab[]).map((t) => (
+          {(['chats', 'people','Requests'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -142,12 +142,13 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
                 tab === t ? 'text-primary border-b-2 border-primary -mb-px' : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              {t === 'chats' ? <MessageSquare size={12} /> : <Users size={12} />}
+              {t === 'chats' ? <MessageSquare size={12} /> : t === 'Requests' ? <Bell size={12} /> : <Users size={12} />}
+              {/* {t === 'Requests' ? <Bell size={12} /> : <Users size={12} />} */}
               {t}
               {t === 'chats' && filteredConvs.length > 0 && (
                 <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">{filteredConvs.length}</Badge>
               )}
-              {t === 'people' && pendingRequests.length > 0 && (
+              {t === 'Requests' && pendingRequests.length > 0 && (
                 <Badge className="h-4 px-1.5 text-[10px]">{pendingRequests.length}</Badge>
               )}
             </button>
@@ -156,16 +157,34 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
 
         {/* Content */}
         <ScrollArea className="flex-1">
+
+          {tab==='Requests' && (
+            <div className="p-2">
+              {pendingRequests.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                 <Bell size={28} className="text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    No pending requests
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 mb-4">
+                    When someone sends you a friend request, it will appear here.
+                  </p>
+                </div>
+              ) : (
+                pendingRequests.map((req) => (
+                  <FriendRequestBadge
+                    key={req._id}
+                    requests={[req]}
+                    respondingId={respondingId}
+                    onAccept={acceptRequest}
+                    onDecline={declineRequest}
+                  />
+                ))
+              )}
+            </div>
+          )}
           {tab === 'chats' && (
             <div className="p-2">
-              {/* Pending friend requests shown at top of chats */}
-              <FriendRequestBadge
-                requests={pendingRequests}
-                respondingId={respondingId}
-                onAccept={acceptRequest}
-                onDecline={declineRequest}
-              />
-
               {loadingConversations
                 ? Array.from({ length: 5 }).map((_, i) => <SkeletonItem key={i} />)
                 : filteredConvs.length === 0
@@ -180,7 +199,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
                       </p>
                       {!search && (
                         <Button variant="outline" size="sm" onClick={() => setTab('people')} className="text-xs">
-                          Find people →
+                          Find people →     
                         </Button>
                       )}
                     </div>
@@ -197,9 +216,9 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
             </div>
           )}
 
-          {tab === 'people' && <PeopleTab />}
-        </ScrollArea>
-      </aside>
+          {tab === 'people' && <PeopleTab />}       
+        </ScrollArea>                           
+      </aside>               
 
       <CreateGroupModal
         open={groupModalOpen}

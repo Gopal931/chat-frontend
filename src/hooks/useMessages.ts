@@ -8,7 +8,7 @@ import { useAuth } from './useAuth';
 export const useMessages = (conversationId: string | null) => {
   const { messages, loadingMessages, fetchMessages } = useChat();
   const { socket } = useSocket();
-  const { user }   = useAuth();
+  const { user }= useAuth();
 
   useEffect(() => {
     if (!conversationId) return;
@@ -16,7 +16,7 @@ export const useMessages = (conversationId: string | null) => {
     if (socket && user) {
       socket.emit('message_seen', { conversationId, viewerId: user._id });
     }
-  }, [conversationId]); // eslint-disable-line
+  }, [conversationId]);// eslint-disable-line
 
   return { messages, loadingMessages };
 };

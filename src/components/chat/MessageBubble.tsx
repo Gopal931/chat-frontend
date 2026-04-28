@@ -122,8 +122,8 @@ const useStreamDownload = () => {
       const blobUrl = URL.createObjectURL(blob);
 
       // Step 6: Temporary <a> tag se browser Save dialog trigger karo
-      const a    = document.createElement('a');
-      a.href     = blobUrl;
+      const a = document.createElement('a');
+      a.href= blobUrl;
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
@@ -211,7 +211,7 @@ const ImageLightbox = ({
 
 //--------
 const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
-  const { user }                         = useAuth();
+  const { user } = useAuth();
   const { updateMessage, removeMessage } = useChat();
   const { editMessage, deleteMessage }   = useMessageActions();
 
@@ -220,13 +220,13 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
   const isFile  = message.messageType === 'file' || message.messageType === 'image';
   const isImage = message.messageType === 'image';
 
-  const [editing,     setEditing]     = useState(false);
-  const [editText,    setEditText]    = useState(msgText);
-  const [lightboxOpen, setLightbox]   = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(msgText);
+  const [lightboxOpen, setLightbox] = useState(false);
   // fileUrl nahi hai aur fileKey bhi nahi → permanently unavailable (purana message)
-  const [imgSrc,   setImgSrc]   = useState(message.fileUrl ?? '');
+  const [imgSrc, setImgSrc] = useState(message.fileUrl ?? '');
   const [imgError, setImgError] = useState(!message.fileUrl && !message.fileKey);
-  const [refreshing,  setRefreshing]  = useState(false);
+  const [refreshing, setRefreshing]  = useState(false);
 
   const editRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (editing) editRef.current?.focus(); }, [editing]);
@@ -306,7 +306,7 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
             {isOwn && !editing && (
               <div className="opacity-0 group-hover:opacity-100 transition-opacity mb-1">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger>
                     <Button variant="ghost" size="icon" className="h-6 w-6">
                       <MoreVertical size={13} />
                     </Button>
