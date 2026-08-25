@@ -12,14 +12,16 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    const token = user?.token || localStorage.getItem('token');
+    if (!isAuthenticated || !token) {
       _setSocket(null);
       setSocket((prev) => { prev?.disconnect(); return null; });
       return;
     }
 
     const s = io(import.meta.env.VITE_SOCKET_URL, {
-      auth: { token: user.token },
+      auth: { token },
+      query: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10,

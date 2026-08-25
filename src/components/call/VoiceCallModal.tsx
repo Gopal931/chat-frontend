@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, PhoneOff, ArrowLeft } from 'lucide-react';
 import { useCall } from '@/contexts/CallContext';
 import UserAvatar from '@/components/shared/UserAvatar';
@@ -6,6 +6,7 @@ import UserAvatar from '@/components/shared/UserAvatar';
 export const VoiceCallModal: React.FC = () => {
   const {
     callSession,
+    remoteStream,
     isMuted,
     toggleMute,
     endCall,
@@ -13,6 +14,18 @@ export const VoiceCallModal: React.FC = () => {
   } = useCall();
 
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+      remoteAudioRef.current.muted = !isSpeakerOn;
+      remoteAudioRef.current.volume = 1.0;
+      remoteAudioRef.current.play().catch((err) => {
+        console.warn('[remoteAudio.play() autoplay block/warning]', err);
+      });
+    }
+  }, [remoteStream, isSpeakerOn]);
 
   if (!callSession || callSession.type !== 'audio') return null;
 
@@ -144,6 +157,9 @@ export const VoiceCallModal: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Remote Audio Playback Element */}
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
     </div>
   );
 };
