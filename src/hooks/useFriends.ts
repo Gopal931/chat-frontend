@@ -3,7 +3,7 @@ import { useChat } from "./useChat";
 import { useSocket } from "./useSocket";
 import api from "@/api/axios";
 import { FRIENDS } from "@/api/endpoints";
-import { User } from "@/types/user";
+import { UserWithRelationship } from "@/types/user";
 import { FriendRequest } from "@/types/friend";
 import { Conversation } from "@/types/conversation";
 
@@ -16,10 +16,9 @@ export const useFriends = () => {
   } = useChat();
   const { socket } = useSocket();
 
-  const [searchResult, setSearchResult] = useState<User | null>(null);
+  const [searchResult, setSearchResult] = useState<UserWithRelationship | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set());
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
@@ -29,7 +28,7 @@ export const useFriends = () => {
     setSearchError("");
     setSearchResult(null);
     try {
-      const { data } = await api.get<User>(
+      const { data } = await api.get<UserWithRelationship>(
         `${FRIENDS.SEARCH}?email=${encodeURIComponent(email)}`,
       );
       setSearchResult(data);
@@ -46,7 +45,9 @@ export const useFriends = () => {
     setSendingId(toId);
     try {
       await api.post(FRIENDS.SEND_REQUEST, { toId });
-      setSentRequestIds((prev) => new Set([...prev, toId]));
+      setSearchResult((prev) =>
+        prev && prev._id === toId ? { ...prev, relationship: 'REQUEST_SENT' } : prev
+      );
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
         ?.response?.data?.message;
@@ -57,13 +58,20 @@ export const useFriends = () => {
   }, []);
 
   const acceptRequest = useCallback(
-    async (request: FriendRequest) => {
-      setRespondingId(request._id);
+    async (target: FriendRequest | string) => {
+      const requestId = typeof target === "string" ? target : target._id;
+      const fromId = typeof target === "string" ? "" : target.from?._id;
+      setRespondingId(requestId);
       try {
         const { data } = await api.post<{ conversation: Conversation }>(
-          FRIENDS.ACCEPT(request._id),
+          FRIENDS.ACCEPT(requestId),
         );
-        removePendingRequest(request._id);
+        removePendingRequest(requestId);
+        setSearchResult((prev) =>
+          prev && (prev.requestId === requestId || prev._id === fromId)
+            ? { ...prev, relationship: "FRIENDS" }
+            : prev
+        );
         // Join the new room
         if (socket) socket.emit("join_conversation", data.conversation._id);
         await fetchConversations();
@@ -78,11 +86,18 @@ export const useFriends = () => {
   );
 
   const declineRequest = useCallback(
-    async (request: FriendRequest) => {
-      setRespondingId(request._id);
+    async (target: FriendRequest | string) => {
+      const requestId = typeof target === "string" ? target : target._id;
+      const fromId = typeof target === "string" ? "" : target.from?._id;
+      setRespondingId(requestId);
       try {
-        await api.post(FRIENDS.DECLINE(request._id));
-        removePendingRequest(request._id);
+        await api.post(FRIENDS.DECLINE(requestId));
+        removePendingRequest(requestId);
+        setSearchResult((prev) =>
+          prev && (prev.requestId === requestId || prev._id === fromId)
+            ? { ...prev, relationship: "NOT_FRIENDS" }
+            : prev
+        );
       } catch {
         /* ignore */
       } finally {
@@ -97,7 +112,6 @@ export const useFriends = () => {
     searchResult,
     searching,
     searchError,
-    sentRequestIds,
     sendingId,
     respondingId,
     searchByEmail,

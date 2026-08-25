@@ -30,6 +30,7 @@ export const  MESSAGES = {
 
 export const FRIENDS = {
   SEARCH:'/friends/search',
+  RELATIONSHIP: (id: string) => `/friends/relationship/${id}`,
   SEND_REQUEST: '/friends/request',
   PENDING:'/friends/requests/pending',
   SENT:'/friends/requests/sent',

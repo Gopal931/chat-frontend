@@ -1,3 +1,5 @@
+export type RelationshipState = 'NOT_FRIENDS' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'FRIENDS';
+
 export interface User {
   _id: string;
   username: string;
@@ -5,6 +7,11 @@ export interface User {
   avatar?: string;
   isOnline?: boolean;
   lastSeen?: string;
+}
+
+export interface UserWithRelationship extends User {
+  relationship: RelationshipState;
+  requestId?: string;
 }
 
 export interface AuthUser extends User {

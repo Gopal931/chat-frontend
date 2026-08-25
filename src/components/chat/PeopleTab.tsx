@@ -10,8 +10,8 @@ const PeopleTab: React.FC = () => {
   const { onlineUsers } = useChat();
   const {
     searchResult, searching, searchError,
-    sentRequestIds, sendingId,
-    searchByEmail, sendRequest,
+    sendingId, respondingId,
+    searchByEmail, sendRequest, acceptRequest, declineRequest,
   } = useFriends();
 
   const [email, setEmail] = useState('');
@@ -20,8 +20,6 @@ const PeopleTab: React.FC = () => {
     e.preventDefault();
     searchByEmail(email);
   };
-
-  const alreadySent = searchResult ? sentRequestIds.has(searchResult._id) : false;
 
   return (
     <div className="flex flex-col gap-3 p-3">
@@ -71,21 +69,55 @@ const PeopleTab: React.FC = () => {
                 {onlineUsers.includes(searchResult._id) ? '● Online' : 'Offline'}
               </p>
             </div>
-            <Button
-              size="sm"
-              disabled={alreadySent || sendingId === searchResult._id}
-              variant={alreadySent ? 'secondary' : 'default'}
-              onClick={() => !alreadySent && sendRequest(searchResult._id)}
-              className="flex-shrink-0 gap-1.5"
-            >
-              {sendingId === searchResult._id ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : alreadySent ? (
-                <><CheckCircle2 size={13} /> Sent</>
-              ) : (
-                <><UserPlus size={13} /> Send Request</>
-              )}
-            </Button>
+
+            {searchResult.relationship === 'FRIENDS' && (
+              <Button size="sm" variant="secondary" disabled className="flex-shrink-0 gap-1.5">
+                <CheckCircle2 size={13} /> Friends
+              </Button>
+            )}
+
+            {searchResult.relationship === 'REQUEST_SENT' && (
+              <Button size="sm" variant="secondary" disabled className="flex-shrink-0 gap-1.5">
+                <CheckCircle2 size={13} /> Request Sent
+              </Button>
+            )}
+
+            {searchResult.relationship === 'REQUEST_RECEIVED' && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <Button
+                  size="sm"
+                  disabled={respondingId === searchResult.requestId}
+                  onClick={() => searchResult.requestId && acceptRequest(searchResult.requestId)}
+                  className="h-8 px-2.5 text-xs"
+                >
+                  {respondingId === searchResult.requestId ? <Loader2 size={12} className="animate-spin" /> : 'Accept'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={respondingId === searchResult.requestId}
+                  onClick={() => searchResult.requestId && declineRequest(searchResult.requestId)}
+                  className="h-8 px-2.5 text-xs text-destructive hover:text-destructive"
+                >
+                  Decline
+                </Button>
+              </div>
+            )}
+
+            {searchResult.relationship === 'NOT_FRIENDS' && (
+              <Button
+                size="sm"
+                disabled={sendingId === searchResult._id}
+                onClick={() => sendRequest(searchResult._id)}
+                className="flex-shrink-0 gap-1.5"
+              >
+                {sendingId === searchResult._id ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <><UserPlus size={13} /> Send Request</>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       )}
