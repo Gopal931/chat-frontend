@@ -42,6 +42,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
   const { onlineUsers, pendingRequests } = useChat();
   const { acceptRequest, declineRequest, respondingId } = useFriends();
   const { socket } = useSocket();
+  console.log(pendingRequests);
 
   const [tab, setTab] = useState<Tab>('chats');
   const [search, setSearch] = useState('');
@@ -76,7 +77,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
               <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                 <MessageSquare size={15} className="text-primary-foreground" />
               </div>
-              <span className="font-bold text-foreground tracking-tight">Pulse</span>
+              <span className="font-bold text-foreground tracking-tight">CHAT</span>
             </div>
             <TooltipProvider delayDuration={200}>
               <div className="flex items-center gap-1">

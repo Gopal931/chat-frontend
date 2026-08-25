@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { ArrowLeft, Users } from 'lucide-react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
 import { useMessages } from '@/hooks/useMessages';
@@ -47,12 +47,22 @@ const scrollToBottom = (el: HTMLDivElement | null, smooth = false) => {
 const ChatWindow: React.FC<Props> = ({ onBack }) => {
   const { user } = useAuth();
   const { activeConversation, onlineUsers } = useChat();
-  const { messages, loadingMessages }    = useMessages(activeConversation?._id ?? null);
+  const {
+    messages,
+    loadingMessages,
+    hasMoreMessages,
+    loadingMoreMessages,
+    fetchMoreMessages,
+  } = useMessages(activeConversation?._id ?? null);
   const { socket } = useSocket();
 
-  const containerRef  = useRef<HTMLDivElement>(null);
-  const convIdRef = useRef<string | null>(null);  // track active conversation
-  const isNewMsgRef   = useRef(false);                // was it a new message (not load)
+  const containerRef           = useRef<HTMLDivElement>(null);
+  const activeConvIdRef        = useRef<string | null>(null);
+  const prevScrollHeightRef    = useRef<number>(0);
+  const prevScrollTopRef       = useRef<number>(0);
+  const isPrependingRef        = useRef<boolean>(false);
+  const initialScrollDoneRef   = useRef<boolean>(false);
+  const prevMessageCountRef    = useRef<number>(0);
 
   const partner = activeConversation?.participants.find((p) => p._id !== user?._id);
   const displayName = activeConversation?.isGroup
@@ -63,39 +73,89 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
   // Mark messages seen
   useEffect(() => {
     if (!socket || !activeConversation || !user) return;
-    socket.emit('message_seen', { conversationId: activeConversation._id, viewerId: user._id });
+    socket.emit('messages_seen', { conversationId: activeConversation._id, viewerId: user._id });
   }, [activeConversation?._id, socket, user]);
-
-  // ── Conversation switch — jab user sidebar mein click kare ─────────────────
-  // loadingMessages: true → false transition pe scroll karo
-  // Is waqt messages DOM mein render ho chuke hote hain
+  
+  // ── 1. Conversation switch & Initial Load ─────────────────────────────────
   useEffect(() => {
-    if (!loadingMessages && messages.length > 0) {
-      // Loading khatam — ab DOM mein messages hain
-      // setTimeout(0) ek extra tick deta hai taaki React DOM update complete ho
-      const t = setTimeout(() => {
-        scrollToBottom(containerRef.current, false); // instant
-      }, 0);
-      return () => clearTimeout(t);
-    }
-  }, [loadingMessages]); // sirf loadingMessages pe — messages array pe nahi
+    if (!activeConversation) return;
 
-  // ── New message aaya (send/receive) — smooth scroll ──────
-  useEffect(() => {
-    const currentConvId = activeConversation?._id ?? null;
-
-    if (currentConvId !== convIdRef.current) {
-      // Conversation badli — scroll loadingMessages effect handle karega
-      convIdRef.current = currentConvId;
-      isNewMsgRef.current = false;
+    // Check if active conversation changed
+    if (activeConvIdRef.current !== activeConversation._id) {
+      activeConvIdRef.current = activeConversation._id;
+      isPrependingRef.current = false;
+      initialScrollDoneRef.current = false;
+      prevMessageCountRef.current = 0;
       return;
     }
 
-    // Same conversation mein naya message aaya
-    if (messages.length > 0 && !loadingMessages) {
-      scrollToBottom(containerRef.current, true); // smooth
+    // Perform initial scroll to bottom ONLY ONCE when initial batch finishes loading
+    if (!loadingMessages && messages.length > 0 && !initialScrollDoneRef.current) {
+      initialScrollDoneRef.current = true;
+      prevMessageCountRef.current = messages.length;
+      requestAnimationFrame(() => {
+        scrollToBottom(containerRef.current, false); // instant scroll to bottom for new conversation
+      });
     }
-  }, [messages.length]);//sirf length pe — content change pe nahi
+  }, [activeConversation?._id, loadingMessages, messages.length]);
+
+  // ── 2. Scroll position preservation when prepending older messages ───────────
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (isPrependingRef.current) {
+      const newScrollHeight = container.scrollHeight;
+      const heightDiff = newScrollHeight - prevScrollHeightRef.current;
+      container.scrollTop = prevScrollTopRef.current + heightDiff;
+
+      isPrependingRef.current = false;
+      prevMessageCountRef.current = messages.length;
+    }
+  }, [messages]);
+
+  // ── 3. Realtime / Outgoing New Messages ─────────────────────────────────────
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || loadingMessages || !initialScrollDoneRef.current) return;
+
+    // Only trigger when new message(s) are appended (messages count increased and NOT prepending)
+    if (messages.length > prevMessageCountRef.current && !isPrependingRef.current) {
+      const lastMsg = messages[messages.length - 1];
+      const isMyMsg = lastMsg?.sender?._id === user?._id;
+
+      // Check if user was near bottom (within 200px)
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      const isNearBottom = distanceFromBottom <= 200;
+
+      if (isMyMsg || isNearBottom) {
+        scrollToBottom(container, true); // smooth scroll to bottom for new message
+      }
+
+      prevMessageCountRef.current = messages.length;
+    }
+  }, [messages, loadingMessages, user?._id]);
+
+  // ── 4. Top scroll threshold handler for fetching older messages ─────────────
+  const handleScroll = () => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    if (
+      el.scrollTop <= 200 &&
+      hasMoreMessages &&
+      !loadingMoreMessages &&
+      !loadingMessages &&
+      !isPrependingRef.current
+    ) {
+      if (activeConversation) {
+        prevScrollHeightRef.current = el.scrollHeight;
+        prevScrollTopRef.current = el.scrollTop;
+        isPrependingRef.current = true;
+        fetchMoreMessages(activeConversation._id);
+      }
+    }
+  };
 
   if (!activeConversation) return <EmptyState />;
 
@@ -126,7 +186,14 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
       </div>
 
       {/* Messages container — ye hi scroll hoga */}
-      <div ref={containerRef} className="flex-1 px-4 py-3 overflow-y-auto">
+      <div ref={containerRef} onScroll={handleScroll} className="flex-1 px-4 py-3 overflow-y-auto">
+        {loadingMoreMessages && (
+          <div className="flex items-center justify-center gap-2 py-2 mb-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Loading older messages...</span>
+          </div>
+        )}
+
         {loadingMessages
           ? <MessageSkeleton />
           : messages.length === 0

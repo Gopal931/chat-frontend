@@ -21,3 +21,9 @@ export interface Message {
   fileSize?:     number;
   fileMimeType?: string;
 }
+
+export interface PaginatedMessagesResponse {
+  messages: Message[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}

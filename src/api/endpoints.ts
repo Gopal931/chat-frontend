@@ -14,7 +14,11 @@ export const CONVERSATIONS = {
 } as const;
 
 export const  MESSAGES = {
-  GET:(id: string) => `/messages/${id}`,
+  GET:(id: string, limit: number = 30, before?: string | null) => {
+    let url = `/messages/${id}?limit=${limit}`;
+    if (before) url += `&before=${encodeURIComponent(before)}`;
+    return url;
+  },
   SEND:'/messages',
   EDIT:(id: string) => `/messages/${id}`,
   DELETE:(id: string) => `/messages/${id}`,

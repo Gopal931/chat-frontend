@@ -68,7 +68,7 @@ const ConversationItem: React.FC<Props> = ({ conversation, isActive, onClick }) 
       {/* Delete on hover */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-          <button className="absolute right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-destructive/10 transition-all">
+          <button title="Delete conversation" className="absolute right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-destructive/10 transition-all">
             <Trash2 size={13} className="text-muted-foreground hover:text-destructive" />
           </button>
         </DropdownMenuTrigger>
