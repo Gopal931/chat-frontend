@@ -4,9 +4,14 @@ export interface User {
   _id: string;
   username: string;
   email: string;
+  bio?: string;
+  phone?: string;
+  avatarUrl?: string | null;
+  avatarKey?: string | null;
   avatar?: string;
   isOnline?: boolean;
   lastSeen?: string;
+  createdAt?: string;
 }
 
 export interface UserWithRelationship extends User {

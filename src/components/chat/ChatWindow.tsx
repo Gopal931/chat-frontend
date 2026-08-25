@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
@@ -10,6 +10,8 @@ import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
 import UserAvatar from '@/components/shared/UserAvatar';
+import UserProfileDrawer from './UserProfileDrawer';
+import { formatLastSeen } from '@/utils/formatLastSeen';
 
 interface Props { onBack?: () => void; }
 
@@ -157,6 +159,8 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
     }
   };
 
+  const [showProfileDrawer, setShowProfileDrawer] = useState(false);
+
   if (!activeConversation) return <EmptyState />;
 
   return (
@@ -168,22 +172,34 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
             <ArrowLeft size={18} />
           </Button>
         )}
-        <div className="relative">
-          {activeConversation.isGroup
-            ? <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center"><Users size={16} className="text-primary" /></div>
-            : <UserAvatar username={displayName} size="sm" isOnline={!!isPartnerOnline} />
-          }
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
-          <p className="text-[11px] text-muted-foreground">
+        <div
+          onClick={() => !activeConversation.isGroup && partner && setShowProfileDrawer(true)}
+          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <div className="relative">
             {activeConversation.isGroup
-              ? `${activeConversation.participants.length} members`
-              : isPartnerOnline ? '● Online' : 'Last seen recently'
+              ? <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center"><Users size={16} className="text-primary" /></div>
+              : <UserAvatar username={displayName} avatarUrl={partner?.avatarUrl} size="sm" isOnline={!!isPartnerOnline} />
             }
-          </p>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {activeConversation.isGroup
+                ? `${activeConversation.participants.length} members`
+                : formatLastSeen(partner?.lastSeen, !!isPartnerOnline)
+              }
+            </p>
+          </div>
         </div>
       </div>
+
+      <UserProfileDrawer
+        open={showProfileDrawer}
+        onClose={() => setShowProfileDrawer(false)}
+        userProfile={partner ? { ...partner, isOnline: !!isPartnerOnline } : null}
+        isSelf={false}
+      />
 
       {/* Messages container — ye hi scroll hoga */}
       <div ref={containerRef} onScroll={handleScroll} className="flex-1 px-4 py-3 overflow-y-auto">

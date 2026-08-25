@@ -315,6 +315,38 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
       socket.on('online_users', (ids: string[]) => setOnlineUsers(ids));
 
+      socket.on('user_presence', ({ userId, isOnline, lastSeen }: { userId: string; isOnline: boolean; lastSeen?: string | null }) => {
+        setOnlineUsers((prev) => {
+          if (isOnline) {
+            return prev.includes(userId) ? prev : [...prev, userId];
+          } else {
+            return prev.filter((id) => id !== userId);
+          }
+        });
+
+        setConversations((prev) =>
+          prev.map((c) => ({
+            ...c,
+            participants: c.participants.map((p) =>
+              p._id === userId ? { ...p, isOnline, lastSeen: lastSeen ?? p.lastSeen } : p
+            ),
+          }))
+        );
+
+        setActiveState((prev) => {
+          if (!prev) return null;
+          if (prev.participants.some((p) => p._id === userId)) {
+            return {
+              ...prev,
+              participants: prev.participants.map((p) =>
+                p._id === userId ? { ...p, isOnline, lastSeen: lastSeen ?? p.lastSeen } : p
+              ),
+            };
+          }
+          return prev;
+        });
+      });
+
       // ── messages_seen ─────────────────────────────────────────────────────
       // Updates BOTH the message list (blue ticks) AND the sidebar conversation
       socket.on('messages_seen', (data: { conversationId: string; seenBy: string }) => {

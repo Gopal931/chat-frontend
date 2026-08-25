@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff, Bell } from 'lucide-react';
+import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff, Bell, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/hooks/useConversations';
 import { useFriends } from '@/hooks/useFriends';
@@ -16,6 +16,7 @@ import CreateGroupModal from './CreateGroupModal';
 import FriendRequestBadge from './FriendRequestBadge';
 import PeopleTab from './PeopleTab';
 import UserAvatar from '@/components/shared/UserAvatar';
+import UserProfileDrawer from './UserProfileDrawer';
 import { Conversation } from '@/types/conversation';
 
 interface Props {
@@ -47,6 +48,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
   const [tab, setTab] = useState<Tab>('chats');
   const [search, setSearch] = useState('');
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [myProfileOpen, setMyProfileOpen] = useState(false);
 
   const filteredConvs = conversations
     .filter((c) => {
@@ -110,12 +112,16 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
           </div>
 
           {/* User pill */}
-          <div className="flex items-center gap-2 bg-secondary rounded-xl px-3 py-2">
-            <UserAvatar username={user?.username ?? ''} size="sm" isOnline />
+          <div
+            onClick={() => setMyProfileOpen(true)}
+            className="flex items-center gap-2 bg-secondary hover:bg-secondary/80 rounded-xl px-3 py-2 cursor-pointer transition-colors group"
+          >
+            <UserAvatar username={user?.username ?? ''} avatarUrl={user?.avatarUrl} size="sm" isOnline />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{user?.username}</p>
+              <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">{user?.username}</p>
               <p className="text-[10px] text-emerald-500 font-medium">● Active now</p>
             </div>
+            <Settings size={14} className="text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
           </div>
 
           {/* Search — only on chats tab */}
@@ -224,6 +230,13 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
       <CreateGroupModal
         open={groupModalOpen}
         onClose={() => setGroupModalOpen(false)}
+      />
+
+      <UserProfileDrawer
+        open={myProfileOpen}
+        onClose={() => setMyProfileOpen(false)}
+        userProfile={user}
+        isSelf={true}
       />
     </>
   );

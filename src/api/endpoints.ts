@@ -5,6 +5,11 @@ export const AUTH = {
 
 export const USERS = {
   GET_ALL: '/users',
+  PROFILE: (id?: string) => (id ? `/users/profile/${id}` : '/users/profile'),
+  UPDATE_PROFILE: '/users/profile',
+  AVATAR_UPLOAD_URL: '/users/avatar-upload-url',
+  SAVE_AVATAR: '/users/avatar',
+  CHANGE_PASSWORD: '/users/change-password',
 } as const;
 
 export const CONVERSATIONS = {
