@@ -157,25 +157,25 @@ const UserProfileDrawer: React.FC<Props> = ({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
       />
 
       {/* Drawer */}
       <aside
         className={cn(
-          'fixed inset-y-0 right-0 z-50 flex flex-col bg-card border-l border-border shadow-2xl overflow-hidden',
+          'fixed inset-y-0 right-0 z-50 flex flex-col bg-card/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl overflow-hidden',
           'w-full sm:w-[380px] md:w-[400px]',
           'animate-in slide-in-from-right duration-300 ease-out'
         )}
       >
         {/* Drawer Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card/90 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 glass-header">
           <div className="flex items-center gap-2.5">
-            <h2 className="text-base font-bold text-foreground">
+            <h2 className="text-base font-extrabold text-foreground tracking-tight">
               {isSelf ? 'Profile & Settings' : 'Contact Info'}
             </h2>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onClose}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/10" onClick={onClose}>
             <X size={18} />
           </Button>
         </div>
@@ -184,7 +184,7 @@ const UserProfileDrawer: React.FC<Props> = ({
         <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
 
           {/* Hero Section */}
-          <div className="flex flex-col items-center text-center space-y-3 pb-4 border-b border-border">
+          <div className="flex flex-col items-center text-center space-y-3.5 pb-6 border-b border-white/10">
             <div className="relative group">
               <UserAvatar
                 username={activeUser.username}

@@ -2,11 +2,15 @@ import React from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
-const COLORS = [
-  'bg-violet-600','bg-cyan-600','bg-emerald-600',
-  'bg-rose-600','bg-amber-600','bg-blue-600','bg-pink-600',
+const GRADIENTS = [
+  'bg-gradient-to-tr from-violet-600 to-indigo-600',
+  'bg-gradient-to-tr from-cyan-600 to-blue-600',
+  'bg-gradient-to-tr from-emerald-600 to-teal-600',
+  'bg-gradient-to-tr from-rose-600 to-pink-600',
+  'bg-gradient-to-tr from-amber-600 to-orange-600',
+  'bg-gradient-to-tr from-purple-600 to-indigo-600',
 ];
-export const getAvatarColor = (str: string) => COLORS[(str?.charCodeAt(0) ?? 0) % COLORS.length];
+export const getAvatarColor = (str: string) => GRADIENTS[(str?.charCodeAt(0) ?? 0) % GRADIENTS.length];
 
 interface Props {
   username: string;
@@ -25,10 +29,10 @@ const sizeMap = {
 };
 
 const dotMap = {
-  sm: 'h-2 w-2',
-  md: 'h-2.5 w-2.5',
-  lg: 'h-3 w-3',
-  xl: 'h-5 w-5 border-4',
+  sm: 'h-2.5 w-2.5 border-2',
+  md: 'h-3 w-3 border-2',
+  lg: 'h-3.5 w-3.5 border-2',
+  xl: 'h-6 w-6 border-4',
 };
 
 const UserAvatar: React.FC<Props> = ({
@@ -40,11 +44,11 @@ const UserAvatar: React.FC<Props> = ({
   className,
 }) => (
   <div className="relative flex-shrink-0">
-    <Avatar className={cn(sizeMap[size], className)}>
+    <Avatar className={cn(sizeMap[size], 'shadow-md border border-white/10', className)}>
       {avatarUrl && (
         <AvatarImage src={avatarUrl} alt={username} className="object-cover h-full w-full" />
       )}
-      <AvatarFallback className={cn(getAvatarColor(username), 'text-white font-semibold')}>
+      <AvatarFallback className={cn(getAvatarColor(username), 'text-white font-bold tracking-wider')}>
         {username ? username.slice(0, 2).toUpperCase() : 'U'}
       </AvatarFallback>
     </Avatar>
@@ -53,9 +57,11 @@ const UserAvatar: React.FC<Props> = ({
     {showStatus && (
       <span
         className={cn(
-          'absolute bottom-0 right-0 rounded-full border-2 border-card',
+          'absolute bottom-0 right-0 rounded-full border-card transition-all duration-300',
           dotMap[size],
-          isOnline ? 'bg-emerald-500' : 'bg-slate-500'
+          isOnline
+            ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]'
+            : 'bg-slate-500/80'
         )}
       />
     )}

@@ -41,23 +41,30 @@ const ConversationItem: React.FC<Props> = ({ conversation, isActive, onClick }) 
     <div
       onClick={!deleting ? onClick : undefined}
       className={cn(
-        'flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all duration-150 group relative',
-        isActive ? 'bg-accent' : 'hover:bg-accent/50',
+        'flex items-center gap-3 px-3.5 py-3 rounded-2xl cursor-pointer transition-all duration-200 group relative overflow-hidden',
+        isActive
+          ? 'bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border border-primary/20 shadow-md shadow-primary/5'
+          : 'hover:bg-secondary/60 border border-transparent hover:border-white/5',
         deleting && 'opacity-40 pointer-events-none'
       )}
     >
+      {/* Active Indicator Bar */}
+      {isActive && (
+        <span className="absolute left-0 inset-y-2 w-1.5 bg-gradient-to-b from-violet-500 to-indigo-600 rounded-r-full shadow-[0_0_10px_#6366f1]" />
+      )}
+
       {/* Avatar */}
       {isGroup
         ? <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0"><Users size={18} className="text-primary" /></div>
-        : <UserAvatar username={displayName} size="md" isOnline={!!isOnline} />
+        : <UserAvatar username={displayName} avatarUrl={other?.avatarUrl} size="md" isOnline={!!isOnline} />
       }
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-0.5">
-          <span className={cn('text-sm font-semibold truncate', isActive ? 'text-foreground' : 'text-foreground/90')}>{displayName}</span>
+          <span className={cn('text-sm font-semibold truncate transition-colors', isActive ? 'text-primary font-bold' : 'text-foreground/90 group-hover:text-foreground')}>{displayName}</span>
           {conversation.lastMessage && (
-            <span className="text-[10px] text-muted-foreground ml-2 flex-shrink-0">{formatTime(conversation.lastMessage.createdAt)}</span>
+            <span className="text-[10px] text-muted-foreground ml-2 flex-shrink-0 font-medium">{formatTime(conversation.lastMessage.createdAt)}</span>
           )}
         </div>
         <p className="text-xs text-muted-foreground truncate">

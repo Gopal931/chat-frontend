@@ -55,30 +55,34 @@ const PeopleTab: React.FC = () => {
 
       {/* Result */}
       {searchResult && (
-        <div className="rounded-xl border border-border bg-card p-3">
+        <div className="rounded-2xl border border-white/10 glass-card p-3.5 shadow-lg">
           <div className="flex items-center gap-3">
             <UserAvatar
               username={searchResult.username}
+              avatarUrl={searchResult.avatarUrl}
               size="md"
               isOnline={onlineUsers.includes(searchResult._id)}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{searchResult.username}</p>
+              <p className="text-sm font-bold truncate text-foreground">{searchResult.username}</p>
               <p className="text-xs text-muted-foreground truncate">{searchResult.email}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {onlineUsers.includes(searchResult._id) ? '● Online' : 'Offline'}
+              <p className="text-[10px] font-semibold mt-0.5">
+                {onlineUsers.includes(searchResult._id)
+                  ? <span className="text-emerald-400">● Online</span>
+                  : <span className="text-muted-foreground">Offline</span>
+                }
               </p>
             </div>
 
             {searchResult.relationship === 'FRIENDS' && (
-              <Button size="sm" variant="secondary" disabled className="flex-shrink-0 gap-1.5">
-                <CheckCircle2 size={13} /> Friends
+              <Button size="sm" variant="secondary" disabled className="flex-shrink-0 gap-1.5 rounded-xl border border-white/10">
+                <CheckCircle2 size={13} className="text-emerald-400" /> Friends
               </Button>
             )}
 
             {searchResult.relationship === 'REQUEST_SENT' && (
-              <Button size="sm" variant="secondary" disabled className="flex-shrink-0 gap-1.5">
-                <CheckCircle2 size={13} /> Request Sent
+              <Button size="sm" variant="secondary" disabled className="flex-shrink-0 gap-1.5 rounded-xl border border-white/10">
+                <CheckCircle2 size={13} className="text-indigo-400" /> Request Sent
               </Button>
             )}
 
@@ -88,7 +92,7 @@ const PeopleTab: React.FC = () => {
                   size="sm"
                   disabled={respondingId === searchResult.requestId}
                   onClick={() => searchResult.requestId && acceptRequest(searchResult.requestId)}
-                  className="h-8 px-2.5 text-xs"
+                  className="h-8 px-3 text-xs rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 shadow-md shadow-indigo-500/20"
                 >
                   {respondingId === searchResult.requestId ? <Loader2 size={12} className="animate-spin" /> : 'Accept'}
                 </Button>
@@ -97,7 +101,7 @@ const PeopleTab: React.FC = () => {
                   variant="outline"
                   disabled={respondingId === searchResult.requestId}
                   onClick={() => searchResult.requestId && declineRequest(searchResult.requestId)}
-                  className="h-8 px-2.5 text-xs text-destructive hover:text-destructive"
+                  className="h-8 px-3 text-xs rounded-xl border-white/10 text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   Decline
                 </Button>
@@ -109,7 +113,7 @@ const PeopleTab: React.FC = () => {
                 size="sm"
                 disabled={sendingId === searchResult._id}
                 onClick={() => sendRequest(searchResult._id)}
-                className="flex-shrink-0 gap-1.5"
+                className="flex-shrink-0 gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 shadow-md shadow-indigo-500/20"
               >
                 {sendingId === searchResult._id ? (
                   <Loader2 size={13} className="animate-spin" />

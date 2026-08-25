@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
+    --background: 224 47% 7%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 13%;
+    --card: 224 40% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 10%;
+    --popover: 224 40% 9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 238 75% 65%;
+    --primary: 246 84% 65%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
+    --secondary: 223 30% 16%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 217 33% 20%;
+    --muted: 223 30% 15%;
+    --muted-foreground: 215 20% 60%;
+    --accent: 246 70% 20%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 84% 60%;
+    --destructive: 346 84% 61%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 20%;
-    --input: 217 33% 17%;
-    --ring: 238 75% 65%;
-    --radius: 0.75rem;
+    --border: 224 25% 18%;
+    --input: 223 30% 15%;
+    --ring: 246 84% 65%;
+    --radius: 1rem;
   }
 
   * { box-sizing: border-box; }
@@ -31,7 +31,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   ::selection { background: hsl(var(--primary) / 0.4); }
@@ -42,7 +42,30 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-thin::-webkit-scrollbar { width: 4px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
-}
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  .glass-header {
+    background: rgba(15, 20, 32, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .glass-card {
+    background: rgba(22, 29, 45, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+  }
+
+  .chat-wallpaper {
+    background-color: #0b0f19;
+    background-image: 
+      radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+      radial-gradient(at 90% 90%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
+  }
+}

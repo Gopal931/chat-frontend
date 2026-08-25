@@ -64,22 +64,26 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-card/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users size={18} className="text-primary" /> New Group
+          <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-foreground">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
+              <Users size={16} className="text-white" />
+            </div>
+            Create New Group
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Group name */}
           <div className="space-y-1.5">
-            <Label>Group name</Label>
+            <Label className="text-xs font-semibold text-foreground">Group Name</Label>
             <Input
               value={groupName}
               onChange={(e) => { setGroupName(e.target.value); setError(''); }}
-              placeholder="e.g. Design Team…"
+              placeholder="e.g. Design Team, Friends…"
               maxLength={50}
+              className="bg-secondary/50 border-white/10 rounded-xl focus:border-primary/40 h-10"
             />
           </div>
 
@@ -93,7 +97,7 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
                   <span
                     key={id}
                     onClick={() => toggle(u)}
-                    className="flex items-center gap-1 bg-primary/20 text-primary text-xs px-2.5 py-1 rounded-full cursor-pointer hover:bg-primary/30 transition-colors"
+                    className="flex items-center gap-1 bg-primary/20 text-primary border border-primary/30 text-xs font-semibold px-3 py-1 rounded-full cursor-pointer hover:bg-primary/30 transition-colors shadow-xs"
                   >
                     {u.username} ×
                   </span>
@@ -105,7 +109,7 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
           {/* Member picker */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>
+              <Label className="text-xs font-semibold text-foreground">
                 Members{' '}
                 <span className="text-muted-foreground text-xs font-normal">
                   ({selected.size} selected)
@@ -114,7 +118,7 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 text-xs text-muted-foreground gap-1"
+                className="h-6 text-xs text-muted-foreground gap-1 hover:text-foreground"
                 onClick={fetchConnectedUsers}
               >
                 <RefreshCw size={11} /> Refresh
@@ -122,17 +126,17 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
             </div>
 
             <div className="relative">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search connected users…"
-                className="pl-8"
+                className="pl-8 bg-secondary/50 border-white/10 rounded-xl h-9 text-xs"
               />
             </div>
 
-            <ScrollArea className="h-44 rounded-lg border border-border">
-              <div className="p-1 space-y-0.5">
+            <ScrollArea className="h-44 rounded-2xl border border-white/10 bg-secondary/30">
+              <div className="p-1.5 space-y-1">
                 {filtered.length === 0 ? (
                   <div className="text-center py-6 px-4">
                     {connectedUsers.length === 0 ? (
@@ -155,15 +159,15 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
                         key={u._id}
                         onClick={() => toggle(u)}
                         className={cn(
-                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left',
-                          isSel ? 'bg-primary/10' : 'hover:bg-accent'
+                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left',
+                          isSel ? 'bg-primary/15 border border-primary/30' : 'hover:bg-white/5 border border-transparent'
                         )}
                       >
-                        <UserAvatar username={u.username} size="sm" isOnline={isOnline} />
+                        <UserAvatar username={u.username} avatarUrl={u.avatarUrl} size="sm" isOnline={isOnline} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{u.username}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {isOnline ? '● Online' : 'Offline'}
+                          <p className="text-sm font-semibold truncate text-foreground">{u.username}</p>
+                          <p className="text-[10px] font-medium">
+                            {isOnline ? <span className="text-emerald-400">● Online</span> : <span className="text-muted-foreground">Offline</span>}
                           </p>
                         </div>
                         <div className={cn(
@@ -182,17 +186,18 @@ const CreateGroupModal: React.FC<Props> = ({ open, onClose }) => {
 
           {/* Error */}
           {error && (
-            <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
               {error}
             </p>
           )}
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" className="rounded-xl" onClick={onClose}>Cancel</Button>
           <Button
             onClick={handleCreate}
             disabled={loading || !groupName.trim() || selected.size < 1}
+            className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 shadow-md shadow-indigo-500/20"
           >
             {loading ? 'Creating…' : `Create (${selected.size + 1} members)`}
           </Button>

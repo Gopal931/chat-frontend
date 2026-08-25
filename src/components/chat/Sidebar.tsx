@@ -20,9 +20,8 @@ import UserProfileDrawer from './UserProfileDrawer';
 import { Conversation } from '@/types/conversation';
 
 interface Props {
-  onSelectConversation: (conv: Conversation) => void;
-  mobileOpen: boolean;
-  onClose: () => void;
+  onSelectConversation?: (conv: Conversation) => void;
+  className?: string;
 }
 
 type Tab = 'chats' | 'people' | 'Requests';
@@ -37,7 +36,7 @@ const SkeletonItem = () => (
   </div>
 );
 
-const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose }) => {
+const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
   const { user, logout } = useAuth();
   const { conversations, loadingConversations, activeConversation, setActiveConversation } = useConversations();
   const { onlineUsers, pendingRequests } = useChat();
@@ -61,48 +60,46 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
 
   const handleConvClick = (conv: Conversation) => {
     setActiveConversation(conv);
-    onSelectConversation(conv);
-    onClose();
-  };           
+    onSelectConversation?.(conv);
+  };
 
   return (
     <>
       <aside className={cn(
-        'fixed inset-y-0 left-0 z-40 w-80 flex flex-col bg-card border-r border-border',
-        'transition-transform duration-300 md:relative md:translate-x-0',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        'w-full h-full flex flex-col bg-card/90 backdrop-blur-xl border-r border-white/10 shadow-2xl overflow-hidden',
+        className
       )}>
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 space-y-3 border-b border-border">
+        <div className="px-4 pt-4 pb-3 space-y-3 border-b border-white/10 glass-header">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <MessageSquare size={15} className="text-primary-foreground" />
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-md shadow-indigo-500/30 flex items-center justify-center">
+                <MessageSquare size={17} className="text-white" />
               </div>
-              <span className="font-bold text-foreground tracking-tight">CHAT</span>
+              <div>
+                <span className="font-extrabold text-base text-foreground tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">PULSE</span>
+              </div>
             </div>
             <TooltipProvider delayDuration={200}>
               <div className="flex items-center gap-1">
-                <div className="flex items-center gap-1 mr-1">
-                  {socket?.connected
-                    ? <Wifi size={12} className="text-emerald-500" />
-                    : <WifiOff size={12} className="text-muted-foreground" />}
-                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-secondary/60 border border-white/5 mr-1">
+                  <span className={cn("h-2 w-2 rounded-full", socket?.connected ? "bg-emerald-500 shadow-[0_0_6px_#10b981]" : "bg-slate-500")} />
+                  <span className="text-[10px] font-medium text-muted-foreground hidden sm:inline">
                     {socket?.connected ? `${onlineUsers.length} online` : 'offline'}
                   </span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setTab('chats'); setGroupModalOpen(true); }}>
-                      <Plus size={15} />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-white/10" onClick={() => { setTab('chats'); setGroupModalOpen(true); }}>
+                      <Plus size={16} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>New group</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={logout}>
-                      <LogOut size={15} />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-white/10 text-muted-foreground hover:text-destructive" onClick={logout}>
+                      <LogOut size={16} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Logout</TooltipContent>
@@ -114,49 +111,52 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
           {/* User pill */}
           <div
             onClick={() => setMyProfileOpen(true)}
-            className="flex items-center gap-2 bg-secondary hover:bg-secondary/80 rounded-xl px-3 py-2 cursor-pointer transition-colors group"
+            className="flex items-center gap-3 bg-secondary/60 hover:bg-secondary/90 border border-white/10 rounded-2xl p-2.5 cursor-pointer transition-all duration-200 group shadow-sm hover:shadow-md"
           >
             <UserAvatar username={user?.username ?? ''} avatarUrl={user?.avatarUrl} size="sm" isOnline />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">{user?.username}</p>
-              <p className="text-[10px] text-emerald-500 font-medium">● Active now</p>
+              <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{user?.username}</p>
+              <p className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                <span>●</span> Active now
+              </p>
             </div>
-            <Settings size={14} className="text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+            <Settings size={15} className="text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
           </div>
 
           {/* Search — only on chats tab */}
           {tab === 'chats' && (
             <div className="relative">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search chats…"
-                className="pl-8 h-8 text-sm bg-secondary border-transparent"
+                className="pl-9 h-9 text-xs bg-secondary/50 border-white/10 rounded-xl focus:border-primary/40"
               />
             </div>
           )}
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border">
-          {(['chats', 'people','Requests'] as Tab[]).map((t) => (
+        <div className="flex p-1.5 gap-1 border-b border-white/10 bg-secondary/30">
+          {(['chats', 'people', 'Requests'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={cn(
-                'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold capitalize transition-colors',
-                tab === t ? 'text-primary border-b-2 border-primary -mb-px' : 'text-muted-foreground hover:text-foreground'
+                'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold capitalize transition-all duration-200',
+                tab === t
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-indigo-500/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
               )}
             >
-              {t === 'chats' ? <MessageSquare size={12} /> : t === 'Requests' ? <Bell size={12} /> : <Users size={12} />}
-              {/* {t === 'Requests' ? <Bell size={12} /> : <Users size={12} />} */}
+              {t === 'chats' ? <MessageSquare size={13} /> : t === 'Requests' ? <Bell size={13} /> : <Users size={13} />}
               {t}
               {t === 'chats' && filteredConvs.length > 0 && (
-                <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">{filteredConvs.length}</Badge>
+                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-white/20 text-white border-none">{filteredConvs.length}</Badge>
               )}
               {t === 'Requests' && pendingRequests.length > 0 && (
-                <Badge className="h-4 px-1.5 text-[10px]">{pendingRequests.length}</Badge>
+                <Badge className="h-4 px-1.5 text-[9px] font-bold bg-destructive text-white border-none animate-pulse">{pendingRequests.length}</Badge>
               )}
             </button>
           ))}
@@ -165,11 +165,11 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
         {/* Content */}
         <ScrollArea className="flex-1">
 
-          {tab==='Requests' && (
+          {tab === 'Requests' && (
             <div className="p-2">
               {pendingRequests.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                 <Bell size={28} className="text-muted-foreground/30 mb-3" />
+                  <Bell size={28} className="text-muted-foreground/30 mb-3" />
                   <p className="text-sm font-medium text-muted-foreground mb-1">
                     No pending requests
                   </p>
@@ -206,7 +206,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
                       </p>
                       {!search && (
                         <Button variant="outline" size="sm" onClick={() => setTab('people')} className="text-xs">
-                          Find people →     
+                          Find people →
                         </Button>
                       )}
                     </div>
@@ -223,9 +223,9 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, mobileOpen, onClose })
             </div>
           )}
 
-          {tab === 'people' && <PeopleTab />}       
-        </ScrollArea>                           
-      </aside>               
+          {tab === 'people' && <PeopleTab />}
+        </ScrollArea>
+      </aside>
 
       <CreateGroupModal
         open={groupModalOpen}

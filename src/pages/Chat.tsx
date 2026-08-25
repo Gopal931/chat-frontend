@@ -1,65 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, MessageSquare } from 'lucide-react';
+import React, { useEffect } from 'react';
 import Sidebar from '@/components/chat/Sidebar';
 import ChatWindow from '@/components/chat/ChatWindow';
 import { useChat } from '@/hooks/useChat';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Conversation } from '@/types/conversation';
 
 const Chat: React.FC = () => {
-  const { activeConversation } = useChat();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showChat, setShowChat] = useState(false);
+  const { activeConversation, setActiveConversation } = useChat();
 
+  const isChatOpen = !!activeConversation;
+
+  // Handle browser back button on mobile
   useEffect(() => {
-    if (activeConversation) setShowChat(true);
-    else setShowChat(false);
-  }, [activeConversation]);
+    const handlePopState = () => {
+      setActiveConversation(null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setActiveConversation]);
 
   const handleSelectConversation = (_conv: Conversation) => {
-    setShowChat(true);
-    setSidebarOpen(false);
+    window.history.pushState({ chatOpen: true }, '');
+  };
+
+  const handleBack = () => {
+    setActiveConversation(null);
   };
 
   return (
-    <div className="h-screen bg-background flex overflow-hidden">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <Sidebar onSelectConversation={handleSelectConversation} mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Chat panel */}
-      <div className={`flex-1 flex flex-col overflow-hidden ${showChat ? 'flex' : 'hidden md:flex'}`}>
-        <ChatWindow onBack={() => setShowChat(false)} />
+    <div className="h-[100dvh] w-screen bg-background flex overflow-hidden">
+      {/* Mobile: Full-width Conversation List when no chat selected. Desktop: Fixed width sidebar (320px/384px) */}
+      <div className={cn(
+        'w-full md:w-80 lg:w-96 flex-shrink-0 h-full flex flex-col border-r border-white/10',
+        isChatOpen ? 'hidden md:flex' : 'flex'
+      )}>
+        <Sidebar onSelectConversation={handleSelectConversation} />
       </div>
 
-      {/* Mobile: landing when no chat selected */}
-      {!showChat && (
-        <div className="md:hidden flex-1 flex flex-col bg-background">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(true)}>
-              <Menu size={18} />
-            </Button>
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center">
-                <MessageSquare size={12} className="text-primary-foreground" />
-              </div>
-              <span className="text-sm font-bold">CHAT</span>
-            </div>
-          </div>
-          <div className="flex-1 flex items-center justify-center p-8 text-center">
-            <div>
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
-                <MessageSquare size={28} className="text-primary/60" />
-              </div>
-              <p className="text-sm font-semibold text-foreground">Your conversations</p>
-              <p className="text-xs text-muted-foreground mt-1">Tap the menu to get started</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile: Full-width ChatWindow when chat selected. Desktop: Remaining flex-1 chat panel */}
+      <div className={cn(
+        'flex-1 h-full flex flex-col overflow-hidden min-w-0',
+        isChatOpen ? 'flex' : 'hidden md:flex'
+      )}>
+        <ChatWindow onBack={handleBack} />
+      </div>
     </div>
   );
 };

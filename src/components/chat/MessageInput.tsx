@@ -40,10 +40,12 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showEmoji, setShowEmoji]       = useState(false);
 
-  const textareaRef    = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef   = useRef<HTMLInputElement>(null);
-  const emojiPickerRef = useRef<HTMLDivElement>(null);
-  const smileButtonRef = useRef<HTMLButtonElement>(null);
+  const containerRef    = useRef<HTMLDivElement>(null);
+  const textareaRef     = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const emojiPickerRef  = useRef<HTMLDivElement>(null);
+  const smileButtonRef  = useRef<HTMLButtonElement>(null);
+  const wasFocusedRef   = useRef<boolean>(false);
 
   const { send, sendFile, sending, uploading, uploadProgress, emitTyping } = useSendMessage(conversationId);
 
@@ -92,11 +94,20 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
   const handleSendText = async () => {
     const trimmed = value.trim();
     if (!trimmed || sending) return;
+
+    const shouldFocusBack = document.activeElement === textareaRef.current || wasFocusedRef.current;
+
     setValue('');
     setShowEmoji(false);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
-    await send(trimmed);
-    textareaRef.current?.focus();
+
+    try {
+      await send(trimmed);
+    } finally {
+      if (shouldFocusBack) {
+        textareaRef.current?.focus();
+      }
+    }
   };
 
   const handleSendFile = async () => {
@@ -133,17 +144,17 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
   const canSend = (value.trim().length > 0 || !!selectedFile) && !sending && !uploading && !!conversationId;
 
   return (
-    <div className="flex flex-col gap-2 p-3 border-t border-border bg-card relative">
+    <div ref={containerRef} className="flex flex-col gap-2 p-3.5 border-t border-white/10 glass-header relative">
 
       {/* ── Emoji Picker — textarea ke upar float karta hai ──────────────── */}
       {showEmoji && (
         <div
           ref={emojiPickerRef}
-          className="absolute bottom-full left-2 mb-2 z-50 shadow-2xl rounded-2xl overflow-hidden"
+          className="absolute bottom-full left-2 mb-3 z-50 shadow-2xl rounded-3xl overflow-hidden border border-white/10"
         >
           <EmojiPicker
             onEmojiClick={handleEmojiClick}
-            theme={Theme.AUTO}
+            theme={Theme.DARK}
             lazyLoadEmojis
             searchPlaceHolder="Search emoji..."
             skinTonesDisabled
@@ -155,10 +166,10 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
 
       {/* ── Upload Progress ───────────────────────────────────────────────── */}
       {uploading && (
-        <div className="flex items-center gap-3 bg-secondary rounded-xl px-4 py-2.5 border border-border">
+        <div className="flex items-center gap-3 bg-secondary/80 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-primary/20">
           <UploadCircle progress={uploadProgress} />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground">Uploading to S3…</p>
+            <p className="text-sm font-semibold text-foreground">Uploading to S3…</p>
             <p className="text-xs text-muted-foreground truncate">{selectedFile?.name ?? 'file'}</p>
           </div>
         </div>
@@ -166,48 +177,54 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
 
       {/* ── File Preview ──────────────────────────────────────────────────── */}
       {selectedFile && !uploading && (
-        <div className="flex items-center gap-3 bg-secondary rounded-xl px-3 py-2.5 border border-border">
+        <div className="flex items-center gap-3 bg-secondary/80 backdrop-blur-md rounded-2xl px-3.5 py-2.5 border border-white/10">
           {isImage ? (
             <img src={URL.createObjectURL(selectedFile)} alt="preview"
-              className="h-12 w-12 rounded-lg object-cover flex-shrink-0" />
+              className="h-12 w-12 rounded-xl object-cover flex-shrink-0 shadow-md" />
           ) : (
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
               <FileText size={20} className="text-primary" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+            <p className="text-sm font-semibold truncate">{selectedFile.name}</p>
             <p className="text-xs text-muted-foreground">{formatBytes(selectedFile.size)}</p>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedFile(null)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => setSelectedFile(null)}>
             <X size={14} />
           </Button>
         </div>
       )}
 
       {/* ── Input Row ─────────────────────────────────────────────────────── */}
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-2.5">
         <input ref={fileInputRef} type="file" className="hidden"
           onChange={handleFileChange}
           accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.mp4,.mp3,.txt"
         />
 
         <div className={cn(
-          'flex-1 flex items-end bg-secondary rounded-2xl border border-border transition-colors',
-          'focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/20'
+          'flex-1 flex items-end bg-secondary/70 backdrop-blur-md rounded-2xl border border-white/10 transition-all duration-200 shadow-inner',
+          'focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20'
         )}>
           <textarea
             ref={textareaRef}
             value={value}
             onChange={handleChange}
+            onFocus={() => { wasFocusedRef.current = true; }}
+            onBlur={(e) => {
+              if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+                wasFocusedRef.current = false;
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendText(); }
               if (e.key === 'Escape') setShowEmoji(false);
             }}
             placeholder={selectedFile ? 'Add a caption…' : 'Type a message…'}
             rows={1}
-            disabled={!conversationId || sending || uploading}
-            className="flex-1 bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none disabled:opacity-50 leading-relaxed"
+            disabled={!conversationId || uploading}
+            className="flex-1 bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/70 resize-none focus:outline-none disabled:opacity-50 leading-relaxed"
             style={{ maxHeight: '120px' }}
           />
 
@@ -218,9 +235,9 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
             size="icon"
             type="button"
             className={cn(
-              'h-9 w-9 mb-1 flex-shrink-0 transition-colors',
+              'h-9 w-9 mb-1 flex-shrink-0 transition-colors rounded-xl',
               showEmoji
-                ? 'text-primary bg-primary/10'         // active state
+                ? 'text-primary bg-primary/20'         // active state
                 : 'text-muted-foreground hover:text-foreground'
             )}
             disabled={!conversationId}
@@ -231,7 +248,7 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
           </Button>
 
           <Button variant="ghost" size="icon"
-            className="h-9 w-9 mr-1 mb-1 text-muted-foreground hover:text-primary flex-shrink-0"
+            className="h-9 w-9 mr-1 mb-1 text-muted-foreground hover:text-primary flex-shrink-0 rounded-xl"
             disabled={!conversationId || uploading}
             onClick={() => fileInputRef.current?.click()}
             title="Attach file"
@@ -244,12 +261,16 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
           onClick={handleSend}
           disabled={!canSend}
           size="icon"
-          className={cn('h-11 w-11 rounded-2xl flex-shrink-0 overflow-hidden transition-all',
-            canSend ? 'shadow-lg shadow-primary/25' : '')}
+          className={cn(
+            'h-11 w-11 rounded-2xl flex-shrink-0 overflow-hidden transition-all duration-200',
+            canSend
+              ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95'
+              : 'bg-secondary/50 text-muted-foreground opacity-50'
+          )}
         >
           {uploading
             ? <UploadCircle progress={uploadProgress} />
-            : <Send size={16} className={sending ? 'opacity-50' : ''} />
+            : <Send size={18} className={cn(sending ? 'opacity-50' : '', 'ml-0.5')} />
           }
         </Button>
       </div>

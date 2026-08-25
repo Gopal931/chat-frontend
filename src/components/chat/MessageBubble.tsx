@@ -361,11 +361,11 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
 
             ) : isImage ? (
               // ── IMAGE bubble ──────────────────────────────────────────────
-              <div className={cn('rounded-2xl overflow-hidden', isOwn ? 'rounded-br-sm' : 'rounded-bl-sm')}>
+              <div className={cn('rounded-2xl overflow-hidden border border-white/10 shadow-lg', isOwn ? 'rounded-tr-xs' : 'rounded-tl-xs')}>
                 {/* Thumbnail */}
                 <div className="relative group/img cursor-pointer" onClick={() => setLightbox(true)}>
                   {imgError ? (
-                    <div className="flex items-center justify-center w-48 h-32 bg-muted rounded-xl text-xs text-muted-foreground flex-col gap-1">
+                    <div className="flex items-center justify-center w-48 h-32 bg-muted/60 backdrop-blur-md rounded-xl text-xs text-muted-foreground flex-col gap-1">
                       <span className="text-lg">⚠</span>
                       <span>Image unavailable</span>
                     </div>
@@ -378,26 +378,26 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
                     />
                   )}
                   {refreshing && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <span className="text-white text-xs animate-pulse">Refreshing…</span>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center">
+                      <span className="text-white text-xs animate-pulse font-medium">Refreshing…</span>
                     </div>
                   )}
                   {!imgError && (
-                    <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/25 transition-all flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 transition-all flex items-center justify-center">
                       <ZoomIn size={28} className="text-white opacity-0 group-hover/img:opacity-100 transition-opacity drop-shadow-lg" />
                     </div>
                   )}
                 </div>
 
                 {msgText && (
-                  <p className={cn('px-3 py-1.5 text-sm', isOwn ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground')}>
+                  <p className={cn('px-3 py-1.5 text-sm', isOwn ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-medium' : 'bg-card/90 backdrop-blur-md text-foreground')}>
                     {msgText}
                   </p>
                 )}
 
                 {/* Download bar — sirf receiver ko dikhao */}
                 {!isOwn && (
-                  <div className="flex items-center justify-between gap-3 px-3 py-2 bg-secondary border-t border-border">
+                  <div className="flex items-center justify-between gap-3 px-3 py-2 bg-card/90 backdrop-blur-md border-t border-white/10">
                     <p className="text-xs text-muted-foreground truncate max-w-[120px]">
                       {message.fileName ?? 'image'}
                     </p>
@@ -414,23 +414,23 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
             ) : isFile ? (
               // ── FILE bubble ───────────────────────────────────────────────
               <div className={cn(
-                'flex flex-col gap-2 px-4 py-3 rounded-2xl min-w-[200px]',
+                'flex flex-col gap-2 px-4 py-3 rounded-2xl min-w-[200px] border shadow-md',
                 isOwn
-                  ? 'bg-primary text-primary-foreground rounded-br-sm'
-                  : 'bg-secondary border border-border text-foreground rounded-bl-sm'
+                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-700 text-white border-violet-500/30 rounded-tr-xs shadow-indigo-500/20'
+                  : 'bg-card/80 backdrop-blur-md border-white/10 text-foreground rounded-tl-xs shadow-black/20'
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
-                    isOwn ? 'bg-white/20' : 'bg-primary/10'
+                    'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner',
+                    isOwn ? 'bg-white/20' : 'bg-primary/20 border border-primary/30'
                   )}>
                     <FileIcon mime={message.fileMimeType} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate max-w-[160px]">
+                    <p className="text-sm font-semibold truncate max-w-[160px]">
                       {message.fileName ?? 'File'}
                     </p>
-                    <p className={cn('text-xs', isOwn ? 'text-white/70' : 'text-muted-foreground')}>
+                    <p className={cn('text-xs', isOwn ? 'text-white/80' : 'text-muted-foreground')}>
                       {message.fileSize ? formatBytes(message.fileSize) : ''}
                     </p>
                   </div>
@@ -438,7 +438,7 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
 
                 {/* Download — sirf receiver ko dikhao */}
                 {!isOwn && (
-                  <div className="border-t border-border/40 pt-2 flex justify-end">
+                  <div className="border-t border-white/10 pt-2 flex justify-end">
                     <DownloadBtn
                       downloading={downloading}
                       downloaded={downloaded}
@@ -452,10 +452,10 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
             ) : (
               // ── TEXT bubble ───────────────────────────────────────────────
               <div className={cn(
-                'px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words',
+                'px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-md transition-shadow',
                 isOwn
-                  ? 'bg-primary text-primary-foreground rounded-br-sm'
-                  : 'bg-secondary text-foreground rounded-bl-sm border border-border'
+                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-700 text-white rounded-tr-xs shadow-indigo-500/25 border border-indigo-500/30'
+                  : 'bg-card/80 backdrop-blur-md text-foreground rounded-tl-xs border border-white/10 shadow-black/10'
               )}>
                 {msgText}
               </div>

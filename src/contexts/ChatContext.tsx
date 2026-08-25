@@ -34,7 +34,7 @@ interface ChatContextType {
   fetchConnectedUsers: () => Promise<void>;
   fetchMessages: (conversationId: string) => Promise<void>;
   fetchMoreMessages: (conversationId: string) => Promise<void>;
-  setActiveConversation: (c: Conversation) => void;
+  setActiveConversation: (c: Conversation | null) => void;
   appendMessage: (msg: Message) => void;
   updateMessage: (msg: Message) => void;
   removeMessage: (messageId: string) => void;
@@ -48,29 +48,29 @@ interface ChatContextType {
 export const ChatContext = createContext<ChatContextType>({} as ChatContextType);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  const [conversations, setConversations]     = useState<Conversation[]>([]);
-  const [activeConversation, setActiveState]  = useState<Conversation | null>(null);
-  const [messages, setMessages]               = useState<Message[]>([]);
-  const [onlineUsers, setOnlineUsers]         = useState<string[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversation, setActiveState] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
-  const [connectedUsers, setConnectedUsers]   = useState<User[]>([]);
+  const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
   const [loadingConversations, setLoadingConvs] = useState(false);
-  const [loadingMessages, setLoadingMsgs]     = useState(false);
+  const [loadingMessages, setLoadingMsgs] = useState(false);
 
   const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(false);
   const [loadingMoreMessages, setLoadingMoreMsgs] = useState<boolean>(false);
-  const [nextCursor, setNextCursor]           = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [errorLoadingMore, setErrorLoadingMore] = useState<boolean>(false);
 
   const { user } = useAuth();
 
   const activeConvIdRef = useRef<string | null>(null);
-  const joinedRoomsRef  = useRef<Set<string>>(new Set());
-  const socketRef       = useRef<Socket | null>(null);
+  const joinedRoomsRef = useRef<Set<string>>(new Set());
+  const socketRef = useRef<Socket | null>(null);
 
-  const nextCursorRef   = useRef<string | null>(null);
-  const hasMoreRef      = useRef<boolean>(false);
-  const loadingMoreRef  = useRef<boolean>(false);
+  const nextCursorRef = useRef<string | null>(null);
+  const hasMoreRef = useRef<boolean>(false);
+  const loadingMoreRef = useRef<boolean>(false);
 
   // Always holds latest userId without needing it in deps arrays
   const userIdRef = useRef<string | null>(null);
@@ -89,7 +89,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data } = await api.get<User[]>(FRIENDS.CONNECTED);
       setConnectedUsers(data);
-    } catch {}
+    } catch { }
   }, []);
 
   const fetchMessages = useCallback(async (conversationId: string) => {
@@ -190,15 +190,22 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
     // Receiver is already in this window → emit message_seen immediately
     // This gives sender the blue double tick without any page switch
-    const s      = socketRef.current;
-    const myId   = userIdRef.current;
-    const inWindow  = activeConvIdRef.current === msg.conversationId;
-    const notMyMsg  = myId && myId !== msg.sender._id;
+    const s = socketRef.current;
+    const myId = userIdRef.current;
+    const inWindow = activeConvIdRef.current === msg.conversationId;
+    const notMyMsg = myId && myId !== msg.sender._id;
+
+    if (s && notMyMsg) {
+      s.emit('message_delivered', {
+        messageId: msg._id,
+        conversationId: msg.conversationId,
+      });
+    }
 
     if (s && inWindow && notMyMsg) {
       s.emit('message_seen', {
         conversationId: msg.conversationId,
-        viewerId:       myId,  // ← current user's ID (not sender's, not conv ID)
+        viewerId: myId,  // ← current user's ID (not sender's, not conv ID)
       });
     }
   }, []);
@@ -255,7 +262,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   //SET ACTIVE CONVERSATION 
-  const setActiveConversation = useCallback((conv: Conversation) => {
+  const setActiveConversation = useCallback((conv: Conversation | null) => {
+    if (!conv) {
+      activeConvIdRef.current = null;
+      setActiveState(null);
+      setMessages([]);
+      return;
+    }
     activeConvIdRef.current = conv._id;
     setActiveState(conv);
 
@@ -271,7 +284,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     if (s && userIdRef.current) {
       s.emit('message_seen', {
         conversationId: conv._id,
-        viewerId:       userIdRef.current,
+        viewerId: userIdRef.current,
       });
     }
   }, []); //empty deps — reads everything from refs
@@ -347,6 +360,30 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         });
       });
 
+      socket.on('message_delivered', (data: { messageId: string; conversationId: string; status: string }) => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            String(msg._id) === String(data.messageId)
+              ? { ...msg, status: 'delivered' as const }
+              : msg
+          )
+        );
+
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (String(c._id) !== String(data.conversationId)) return c;
+            if (!c.lastMessage || String(c.lastMessage._id) !== String(data.messageId)) return c;
+            return {
+              ...c,
+              lastMessage: {
+                ...c.lastMessage,
+                status: 'delivered' as const,
+              },
+            };
+          })
+        );
+      });
+
       // ── messages_seen ─────────────────────────────────────────────────────
       // Updates BOTH the message list (blue ticks) AND the sidebar conversation
       socket.on('messages_seen', (data: { conversationId: string; seenBy: string }) => {
@@ -371,7 +408,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
               lastMessage: {
                 ...c.lastMessage,
                 status: 'seen' as const,
-                read:   true,
+                read: true,
               },
             };
           })

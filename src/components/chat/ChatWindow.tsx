@@ -164,27 +164,27 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
   if (!activeConversation) return <EmptyState />;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background chat-wallpaper">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm flex-shrink-0">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/10 glass-header flex-shrink-0 z-10 shadow-sm">
         {onBack && (
-          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={onBack}>
+          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 rounded-full" onClick={onBack}>
             <ArrowLeft size={18} />
           </Button>
         )}
         <div
           onClick={() => !activeConversation.isGroup && partner && setShowProfileDrawer(true)}
-          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-90 transition-opacity"
         >
           <div className="relative">
             {activeConversation.isGroup
-              ? <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center"><Users size={16} className="text-primary" /></div>
-              : <UserAvatar username={displayName} avatarUrl={partner?.avatarUrl} size="sm" isOnline={!!isPartnerOnline} />
+              ? <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center"><Users size={18} className="text-primary" /></div>
+              : <UserAvatar username={displayName} avatarUrl={partner?.avatarUrl} size="md" isOnline={!!isPartnerOnline} />
             }
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground truncate">{displayName}</p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-sm font-bold text-foreground truncate tracking-tight">{displayName}</p>
+            <p className="text-[11px] text-muted-foreground font-medium">
               {activeConversation.isGroup
                 ? `${activeConversation.participants.length} members`
                 : formatLastSeen(partner?.lastSeen, !!isPartnerOnline)
@@ -202,7 +202,7 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
       />
 
       {/* Messages container — ye hi scroll hoga */}
-      <div ref={containerRef} onScroll={handleScroll} className="flex-1 px-4 py-3 overflow-y-auto">
+      <div ref={containerRef} onScroll={handleScroll} className="flex-1 px-4 py-4 overflow-y-auto space-y-2">
         {loadingMoreMessages && (
           <div className="flex items-center justify-center gap-2 py-2 mb-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
