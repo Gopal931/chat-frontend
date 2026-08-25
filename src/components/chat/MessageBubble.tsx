@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Pencil, Trash2, Check, X, MoreVertical,
   Download, FileText, Image, Film, Music,
-  CheckCircle2, ZoomIn,
+  CheckCircle2, ZoomIn, Ban, Phone, Video,
 } from 'lucide-react';
 import { Message } from '@/types/message';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,15 +22,15 @@ import { MESSAGES } from '@/api/endpoints';
 
 interface Props { message: Message; showAvatar: boolean; }
 
-const formatTime  = (d: string) => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-const formatBytes = (b: number) => b < 1024 ? `${b} B` : b < 1024*1024 ? `${(b/1024).toFixed(1)} KB` : `${(b/(1024*1024)).toFixed(1)} MB`;
+const formatTime = (d: string) => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const formatBytes = (b: number) => b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 * 1024)).toFixed(1)} MB`;
 
 // ── File type icon ────────
 const FileIcon = ({ mime }: { mime?: string }) => {
-  if (!mime)                    return <FileText size={20} className="text-primary" />;
-  if (mime.startsWith('image/'))return <Image   size={20} className="text-primary" />;
-  if (mime.startsWith('video/'))return <Film    size={20} className="text-primary" />;
-  if (mime.startsWith('audio/'))return <Music   size={20} className="text-primary" />;
+  if (!mime) return <FileText size={20} className="text-primary" />;
+  if (mime.startsWith('image/')) return <Image size={20} className="text-primary" />;
+  if (mime.startsWith('video/')) return <Film size={20} className="text-primary" />;
+  if (mime.startsWith('audio/')) return <Music size={20} className="text-primary" />;
   return <FileText size={20} className="text-primary" />;
 };
 
@@ -43,10 +43,10 @@ const FileIcon = ({ mime }: { mime?: string }) => {
 //   50%  → offset=56.5  → aadhi bhari
 //   100% → offset=0     → poori bhari
 const CircleProgress = ({ progress, size = 42 }: { progress: number; size?: number }) => {
-  const radius= (size - 6) / 2;
+  const radius = (size - 6) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset= circumference - (progress / 100) * circumference;
-  const center= size / 2;
+  const offset = circumference - (progress / 100) * circumference;
+  const center = size / 2;
 
   return (
     <div className="flex flex-col items-center gap-0.5">
@@ -78,9 +78,9 @@ const CircleProgress = ({ progress, size = 42 }: { progress: number; size?: numb
 //   5. Saare chunks ek Blob mein jodo
 //   6. Blob URL banao aur browser ka Save dialog trigger karo
 const useStreamDownload = () => {
-  const [progress,setProgress]= useState(0);
-  const [downloading,setDownloading] = useState(false);
-  const [downloaded,setDownloaded]  = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [downloading, setDownloading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
 
   const download = async (messageId: string, fileName: string) => {
     if (downloading || downloaded) return;
@@ -100,9 +100,9 @@ const useStreamDownload = () => {
 
       // Step 3: Total size pata karo — progress calculate karne ke liye
       const contentLength = response.headers.get('Content-Length');
-      const total= contentLength ? parseInt(contentLength, 10) : 0;
-      const reader= response.body!.getReader();
-      const chunks:  Uint8Array<ArrayBufferLike>[] = [];
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      const reader = response.body!.getReader();
+      const chunks: Uint8Array<ArrayBufferLike>[] = [];
       let received = 0;
 
       // Step 4: Stream padhte jao — chunk by chunk
@@ -118,12 +118,12 @@ const useStreamDownload = () => {
       }
 
       // Step 5: Saare chunks ek Blob mein jodo
-      const blob = new Blob(chunks as BlobPart[]);  
+      const blob = new Blob(chunks as BlobPart[]);
       const blobUrl = URL.createObjectURL(blob);
 
       // Step 6: Temporary <a> tag se browser Save dialog trigger karo
       const a = document.createElement('a');
-      a.href= blobUrl;
+      a.href = blobUrl;
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
@@ -147,9 +147,9 @@ const DownloadBtn = ({
   downloading, downloaded, progress, onClick,
 }: {
   downloading: boolean;
-  downloaded:  boolean;
-  progress:    number;
-  onClick:     () => void;
+  downloaded: boolean;
+  progress: number;
+  onClick: () => void;
 }) => {
   if (downloaded) return (
     <div className="flex items-center gap-1 text-xs text-emerald-500 font-semibold">
@@ -213,20 +213,21 @@ const ImageLightbox = ({
 const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
   const { user } = useAuth();
   const { updateMessage, removeMessage } = useChat();
-  const { editMessage, deleteMessage }   = useMessageActions();
+  const { editMessage, deleteMessage } = useMessageActions();
 
-  const isOwn   = message.sender._id === user?._id;
+  const isOwn = message.sender._id === user?._id;
   const msgText = message.content ?? message.text ?? '';
-  const isFile  = message.messageType === 'file' || message.messageType === 'image';
+  const isFile = message.messageType === 'file' || message.messageType === 'image';
   const isImage = message.messageType === 'image';
 
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(msgText);
   const [lightboxOpen, setLightbox] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
   // fileUrl nahi hai aur fileKey bhi nahi → permanently unavailable (purana message)
   const [imgSrc, setImgSrc] = useState(message.fileUrl ?? '');
   const [imgError, setImgError] = useState(!message.fileUrl && !message.fileKey);
-  const [refreshing, setRefreshing]  = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const editRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (editing) editRef.current?.focus(); }, [editing]);
@@ -265,12 +266,91 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
     } catch { /* ignore */ }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (type: 'me' | 'everyone') => {
     try {
-      await deleteMessage(message._id);
-      removeMessage(message._id);
-    } catch { /* ignore */ }
+      const data = await deleteMessage(message._id, type);
+      if (type === 'me') {
+        removeMessage(message._id);
+      } else {
+        updateMessage({ ...message, ...data, isDeletedForEveryone: true, text: '', content: '' });
+      }
+    } catch (err) {
+      console.error('Failed to delete message:', err);
+    }
   };
+
+  if (message.isDeletedForEveryone) {
+    return (
+      <div className={cn('flex items-end gap-2 group animate-fade-in my-1', isOwn ? 'flex-row-reverse' : 'flex-row')}>
+        <div className="w-8 flex-shrink-0">
+          {!isOwn && showAvatar && (
+            <UserAvatar username={message.sender.username} size="sm" showStatus={false} />
+          )}
+        </div>
+        <div className={cn('flex flex-col max-w-[65%]', isOwn ? 'items-end' : 'items-start')}>
+          {!isOwn && showAvatar && (
+            <span className="text-xs text-muted-foreground ml-1 mb-1 font-medium">
+              {message.sender.username}
+            </span>
+          )}
+          <div className={cn(
+            'px-3.5 py-2 rounded-2xl text-xs italic flex items-center gap-2 border shadow-xs select-none',
+            isOwn
+              ? 'bg-secondary/40 text-muted-foreground border-white/10 rounded-tr-xs'
+              : 'bg-secondary/40 text-muted-foreground border-white/10 rounded-tl-xs'
+          )}>
+            <Ban size={13} className="text-muted-foreground flex-shrink-0" />
+            <span>{isOwn ? 'You deleted this message' : 'This message was deleted'}</span>
+          </div>
+          <div className={cn('flex items-center gap-1.5 mt-0.5 px-1', isOwn ? 'flex-row-reverse' : 'flex-row')}>
+            <span className="text-[10px] text-muted-foreground">{formatTime(message.createdAt)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (message.messageType === 'call') {
+    const isMissed = message.text.toLowerCase().includes('missed');
+    const isVideo = message.text.toLowerCase().includes('video');
+
+    return (
+      <div className={cn('flex items-end gap-2 group animate-fade-in my-1', isOwn ? 'flex-row-reverse' : 'flex-row')}>
+        <div className="w-8 flex-shrink-0">
+          {!isOwn && showAvatar && (
+            <UserAvatar username={message.sender.username} size="sm" showStatus={false} />
+          )}
+        </div>
+        <div className={cn('flex flex-col max-w-[65%]', isOwn ? 'items-end' : 'items-start')}>
+          {!isOwn && showAvatar && (
+            <span className="text-xs text-muted-foreground ml-1 mb-1 font-medium">
+              {message.sender.username}
+            </span>
+          )}
+          <div
+            className={cn(
+              'px-3.5 py-2 rounded-2xl text-xs flex items-center gap-2 border shadow-xs select-none',
+              isMissed
+                ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                : isOwn
+                ? 'bg-primary/20 text-foreground border-primary/30 rounded-tr-xs'
+                : 'bg-secondary/60 text-foreground border-white/10 rounded-tl-xs'
+            )}
+          >
+            {isVideo ? (
+              <Video size={14} className={isMissed ? 'text-red-400' : 'text-indigo-400'} />
+            ) : (
+              <Phone size={14} className={isMissed ? 'text-red-400' : 'text-emerald-400'} />
+            )}
+            <span className="font-medium">{message.text}</span>
+          </div>
+          <div className={cn('flex items-center gap-1.5 mt-0.5 px-1', isOwn ? 'flex-row-reverse' : 'flex-row')}>
+            <span className="text-[10px] text-muted-foreground">{formatTime(message.createdAt)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -285,7 +365,10 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
         />
       )}
 
-      <div className={cn('flex items-end gap-2 group animate-fade-in', isOwn ? 'flex-row-reverse' : 'flex-row')}>
+      <div
+        onClick={() => setIsSelected((prev) => !prev)}
+        className={cn('flex items-end gap-2 group animate-fade-in cursor-pointer select-none', isOwn ? 'flex-row-reverse' : 'flex-row')}
+      >
 
         {/* Avatar */}
         <div className="w-8 flex-shrink-0">
@@ -302,21 +385,32 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
           )}
 
           <div className="flex items-end gap-1.5">
-            {/* Edit/Delete menu — sender only */}
-            {isOwn && !editing && (
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity mb-1">
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
+            {/* Edit/Delete menu */}
+            {!editing && (
+              <div className={cn(
+                'transition-opacity mb-1 z-10',
+                isSelected ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'
+              )}>
+                <DropdownMenu onOpenChange={(open) => setIsSelected(open)}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsSelected(true);
+                      }}
+                      className="h-6 w-6 rounded-full hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Message options"
+                    >
                       <MoreVertical size={13} />
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-36">
-                    {!isFile && (
+                  <DropdownMenuContent align={isOwn ? 'end' : 'start'} className="w-44 z-50">
+                    {isOwn && !isFile && (
                       <>
                         <DropdownMenuItem
                           onClick={() => { setEditText(msgText); setEditing(true); }}
-                          className="gap-2"
+                          className="gap-2 cursor-pointer"
                         >
                           <Pencil size={13} className="text-primary" /> Edit
                         </DropdownMenuItem>
@@ -324,11 +418,19 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
                       </>
                     )}
                     <DropdownMenuItem
-                      onClick={handleDelete}
-                      className="gap-2 text-destructive focus:text-destructive"
+                      onClick={() => handleDelete('me')}
+                      className="gap-2 text-destructive focus:text-destructive cursor-pointer"
                     >
-                      <Trash2 size={13} /> Delete
+                      <Trash2 size={13} /> Delete for me
                     </DropdownMenuItem>
+                    {isOwn && (
+                      <DropdownMenuItem
+                        onClick={() => handleDelete('everyone')}
+                        className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                      >
+                        <Ban size={13} /> Delete for everyone
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -338,7 +440,7 @@ const MessageBubble: React.FC<Props> = ({ message, showAvatar }) => {
             {editing ? (
               <div className="flex flex-col gap-2 w-64">
                 <textarea
-                title='t'
+                  title='t'
                   ref={editRef}
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}

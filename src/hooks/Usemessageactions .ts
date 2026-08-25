@@ -10,8 +10,9 @@ export const useMessageActions = () => {
     return data;
   }, []);
 
-  const deleteMessage = useCallback(async (messageId: string) => {
-    await api.delete(MESSAGES.DELETE(messageId));
+  const deleteMessage = useCallback(async (messageId: string, type: 'me' | 'everyone' = 'everyone') => {
+    const { data } = await api.delete(`${MESSAGES.DELETE(messageId)}?type=${type}`);
+    return data;
   }, []);
 
   return { editMessage, deleteMessage };

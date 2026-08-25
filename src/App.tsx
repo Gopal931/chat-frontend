@@ -19,6 +19,11 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return !isAuthenticated ? <>{children}</> : <Navigate to="/chat" replace />;
 };
 
+import { CallProvider } from '@/contexts/CallContext';
+import IncomingCallModal from '@/components/call/IncomingCallModal';
+import VoiceCallModal from '@/components/call/VoiceCallModal';
+import VideoCallModal from '@/components/call/VideoCallModal';
+
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Navigate to="/chat" replace />} />
@@ -30,9 +35,14 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <ChatProvider>
             <SocketProvider>
-              <TooltipProvider delayDuration={300}>
-                <Chat />
-              </TooltipProvider>
+              <CallProvider>
+                <TooltipProvider delayDuration={300}>
+                  <Chat />
+                  <IncomingCallModal />
+                  <VoiceCallModal />
+                  <VideoCallModal />
+                </TooltipProvider>
+              </CallProvider>
             </SocketProvider>
           </ChatProvider>
         </ProtectedRoute>

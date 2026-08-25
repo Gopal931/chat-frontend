@@ -26,23 +26,52 @@
     --radius: 1rem;
   }
 
-  * { box-sizing: border-box; }
-  html, body, #root { height: 100%; margin: 0; padding: 0; }
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  ::selection { background: hsl(var(--primary) / 0.4); }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.4);
+  }
 }
 
 @layer utilities {
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
 
   .glass-header {
     background: rgba(15, 20, 32, 0.75);
@@ -63,7 +92,7 @@
 
   .chat-wallpaper {
     background-color: #0b0f19;
-    background-image: 
+    background-image:
       radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
       radial-gradient(at 90% 90%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
       radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);

@@ -1,7 +1,7 @@
 import { User } from './user';
 
 export type MessageStatus = 'sent' | 'delivered' | 'seen';
-export type MessageType   = 'text' | 'file' | 'image';
+export type MessageType   = 'text' | 'file' | 'image' | 'call';
 
 export interface Message {
   _id:           string;
@@ -15,6 +15,8 @@ export interface Message {
   createdAt:     string;
   updatedAt?:    string;
   messageType:   MessageType;
+  isDeletedForEveryone?: boolean;
+  deletedFor?:   string[];
   fileUrl?:      string;       // dynamically generated presigned GET URL — DB mein nahi hai
   fileKey?:      string;       // S3 object key — DB mein permanently stored
   fileName?:     string;

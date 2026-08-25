@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff, Bell, Settings } from 'lucide-react';
+import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff, Bell, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/hooks/useConversations';
 import { useFriends } from '@/hooks/useFriends';
@@ -17,6 +17,7 @@ import FriendRequestBadge from './FriendRequestBadge';
 import PeopleTab from './PeopleTab';
 import UserAvatar from '@/components/shared/UserAvatar';
 import UserProfileDrawer from './UserProfileDrawer';
+import NewChatModal from './NewChatModal';
 import { Conversation } from '@/types/conversation';
 
 interface Props {
@@ -39,7 +40,13 @@ const SkeletonItem = () => (
 const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
   const { user, logout } = useAuth();
   const { conversations, loadingConversations, activeConversation, setActiveConversation } = useConversations();
-  const { onlineUsers, pendingRequests } = useChat();
+  const {
+    onlineUsers,
+    pendingRequests,
+    hasMoreConversations,
+    loadingMoreConversations,
+    fetchMoreConversations,
+  } = useChat();
   const { acceptRequest, declineRequest, respondingId } = useFriends();
   const { socket } = useSocket();
   console.log(pendingRequests);
@@ -48,6 +55,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
   const [search, setSearch] = useState('');
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [myProfileOpen, setMyProfileOpen] = useState(false);
+  const [newChatModalOpen, setNewChatModalOpen] = useState(false);
 
   const filteredConvs = conversations
     .filter((c) => {
@@ -191,7 +199,15 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
             </div>
           )}
           {tab === 'chats' && (
-            <div className="p-2">
+            <div
+              className="p-2 overflow-y-auto max-h-full"
+              onScroll={(e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                if (scrollHeight - scrollTop - clientHeight < 60 && hasMoreConversations && !loadingMoreConversations) {
+                  fetchMoreConversations();
+                }
+              }}
+            >
               {loadingConversations
                 ? Array.from({ length: 5 }).map((_, i) => <SkeletonItem key={i} />)
                 : filteredConvs.length === 0
@@ -211,20 +227,46 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
                       )}
                     </div>
                   )
-                  : filteredConvs.map((conv) => (
-                    <ConversationItem
-                      key={conv._id}
-                      conversation={conv}
-                      isActive={activeConversation?._id === conv._id}
-                      onClick={() => handleConvClick(conv)}
-                    />
-                  ))
+                  : (
+                    <>
+                      {filteredConvs.map((conv) => (
+                        <ConversationItem
+                          key={conv._id}
+                          conversation={conv}
+                          isActive={activeConversation?._id === conv._id}
+                          onClick={() => handleConvClick(conv)}
+                        />
+                      ))}
+                      {loadingMoreConversations && (
+                        <div className="flex justify-center py-3">
+                          <Loader2 size={16} className="animate-spin text-primary" />
+                        </div>
+                      )}
+                    </>
+                  )
               }
             </div>
           )}
 
           {tab === 'people' && <PeopleTab />}
         </ScrollArea>
+
+        {/* Floating WhatsApp-Style "+" New Chat FAB Button */}
+        {tab === 'chats' && (
+          <>
+            <NewChatModal
+              open={newChatModalOpen}
+              onClose={() => setNewChatModalOpen(false)}
+            />
+            <button
+              onClick={() => setNewChatModalOpen((prev) => !prev)}
+              className="absolute bottom-5 right-5 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer border border-white/20"
+              title="New Chat"
+            >
+              <Plus size={22} className={cn('transition-transform duration-200', newChatModalOpen && 'rotate-45')} />
+            </button>
+          </>
+        )}
       </aside>
 
       <CreateGroupModal

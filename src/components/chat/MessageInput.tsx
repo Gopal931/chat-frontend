@@ -10,14 +10,14 @@ import { useSendMessage } from '@/hooks/useSendMessage';
 interface Props { conversationId: string | null; }
 
 const formatBytes = (b: number): string =>
-  b < 1024 ? `${b} B` : b < 1024*1024 ? `${(b/1024).toFixed(1)} KB` : `${(b/(1024*1024)).toFixed(1)} MB`;
+  b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 * 1024)).toFixed(1)} MB`;
 
 // ── SVG Circle — upload progress ──────────────────
 const UploadCircle = ({ progress }: { progress: number }) => {
-  const radius= 16;
+  const radius = 16;
   const circumference = 2 * Math.PI * radius;
-  const offset= circumference - (progress / 100) * circumference;
-  const size= 38;
+  const offset = circumference - (progress / 100) * circumference;
+  const size = 38;
   const center = size / 2;
   return (
     <div className="flex flex-col items-center gap-0.5">
@@ -36,16 +36,16 @@ const UploadCircle = ({ progress }: { progress: number }) => {
 };
 
 const MessageInput: React.FC<Props> = ({ conversationId }) => {
-  const [value, setValue]               = useState('');
+  const [value, setValue] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showEmoji, setShowEmoji]       = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
 
-  const containerRef    = useRef<HTMLDivElement>(null);
-  const textareaRef     = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef    = useRef<HTMLInputElement>(null);
-  const emojiPickerRef  = useRef<HTMLDivElement>(null);
-  const smileButtonRef  = useRef<HTMLButtonElement>(null);
-  const wasFocusedRef   = useRef<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const smileButtonRef = useRef<HTMLButtonElement>(null);
+  const wasFocusedRef = useRef<boolean>(false);
 
   const { send, sendFile, sending, uploading, uploadProgress, emitTyping } = useSendMessage(conversationId);
 
@@ -68,15 +68,15 @@ const MessageInput: React.FC<Props> = ({ conversationId }) => {
 
   // ── Emoji clicked → insert at cursor position ────────────────────────────
   const handleEmojiClick = (emojiData: EmojiClickData) => {
-    const emoji    = emojiData.emoji;
+    const emoji = emojiData.emoji;
     const textarea = textareaRef.current;
     if (!textarea) {
       setValue((prev) => prev + emoji);
       return;
     }
     // Insert at cursor position, not always at end
-    const start    = textarea.selectionStart ?? value.length;
-    const end      = textarea.selectionEnd   ?? value.length;
+    const start = textarea.selectionStart ?? value.length;
+    const end = textarea.selectionEnd ?? value.length;
     const newValue = value.slice(0, start) + emoji + value.slice(end);
     setValue(newValue);
 

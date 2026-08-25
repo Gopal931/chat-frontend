@@ -27,6 +27,12 @@ interface ChatContextType {
   loadingMoreMessages: boolean;
   nextCursor: string | null;
   errorLoadingMore: boolean;
+  hasMoreConversations: boolean;
+  loadingMoreConversations: boolean;
+  fetchMoreConversations: () => Promise<void>;
+  hasMoreConnectedUsers: boolean;
+  loadingMoreConnectedUsers: boolean;
+  fetchMoreConnectedUsers: () => Promise<void>;
   onlineUsers: string[];
   pendingRequests: FriendRequest[];
   connectedUsers: User[];
@@ -62,6 +68,18 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [errorLoadingMore, setErrorLoadingMore] = useState<boolean>(false);
 
+  const [hasMoreConversations, setHasMoreConvs] = useState<boolean>(false);
+  const [loadingMoreConversations, setLoadingMoreConvs] = useState<boolean>(false);
+  const [nextConvCursor, setNextConvCursor] = useState<string | null>(null);
+  const nextConvCursorRef = useRef<string | null>(null);
+  const hasMoreConvsRef = useRef<boolean>(false);
+  const loadingMoreConvsRef = useRef<boolean>(false);
+
+  const [hasMoreConnectedUsers, setHasMoreConnected] = useState<boolean>(false);
+  const [loadingMoreConnectedUsers, setLoadingMoreConnected] = useState<boolean>(false);
+  const hasMoreConnectedRef = useRef<boolean>(false);
+  const loadingMoreConnectedRef = useRef<boolean>(false);
+
   const { user } = useAuth();
 
   const activeConvIdRef = useRef<string | null>(null);
@@ -76,20 +94,101 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const userIdRef = useRef<string | null>(null);
   userIdRef.current = user?._id ?? null;
 
+  const connectedUsersRef = useRef<User[]>([]);
+  connectedUsersRef.current = connectedUsers;
+
   // ── FETCHERS
   const fetchConversations = useCallback(async () => {
     setLoadingConvs(true);
     try {
-      const { data } = await api.get<Conversation[]>(CONVERSATIONS.GET_ALL);
-      setConversations(data);
+      const { data } = await api.get<{ conversations: Conversation[]; nextCursor: string | null; hasMore: boolean } | Conversation[]>(
+        CONVERSATIONS.GET_ALL + '?limit=20'
+      );
+      const convs = Array.isArray(data) ? data : (data.conversations || []);
+      const nextCursor = Array.isArray(data) ? null : data.nextCursor;
+      const hasMore = Array.isArray(data) ? false : data.hasMore;
+
+      setConversations((prev) => {
+        const prevUnreadMap = new Map(prev.map((c) => [c._id, c.unreadCount || 0]));
+        return convs.map((c) => ({
+          ...c,
+          unreadCount: c.unreadCount ?? prevUnreadMap.get(c._id) ?? 0,
+        }));
+      });
+      setNextConvCursor(nextCursor);
+      setHasMoreConvs(hasMore);
+      nextConvCursorRef.current = nextCursor;
+      hasMoreConvsRef.current = hasMore;
     } finally { setLoadingConvs(false); }
+  }, []);
+
+  const fetchMoreConversations = useCallback(async () => {
+    if (!hasMoreConvsRef.current || loadingMoreConvsRef.current || !nextConvCursorRef.current) return;
+    loadingMoreConvsRef.current = true;
+    setLoadingMoreConvs(true);
+
+    try {
+      const cursor = nextConvCursorRef.current;
+      const { data } = await api.get<{ conversations: Conversation[]; nextCursor: string | null; hasMore: boolean }>(
+        `${CONVERSATIONS.GET_ALL}?limit=20&before=${cursor}`
+      );
+      const newConvs = data.conversations || [];
+      const nextCursor = data.nextCursor;
+      const hasMore = data.hasMore;
+
+      setConversations((prev) => {
+        const existingIds = new Set(prev.map((c) => c._id));
+        const filtered = newConvs.filter((c) => !existingIds.has(c._id));
+        return [...prev, ...filtered];
+      });
+      setNextConvCursor(nextCursor);
+      setHasMoreConvs(hasMore);
+      nextConvCursorRef.current = nextCursor;
+      hasMoreConvsRef.current = hasMore;
+    } catch (err) {
+      console.error('Failed to load more conversations', err);
+    } finally {
+      loadingMoreConvsRef.current = false;
+      setLoadingMoreConvs(false);
+    }
   }, []);
 
   const fetchConnectedUsers = useCallback(async () => {
     try {
-      const { data } = await api.get<User[]>(FRIENDS.CONNECTED);
-      setConnectedUsers(data);
+      const { data } = await api.get<{ users: User[]; hasMore: boolean } | User[]>(FRIENDS.CONNECTED + '?limit=20&skip=0');
+      const users = Array.isArray(data) ? data : (data.users || []);
+      const hasMore = Array.isArray(data) ? false : data.hasMore;
+
+      setConnectedUsers(users);
+      setHasMoreConnected(hasMore);
+      hasMoreConnectedRef.current = hasMore;
     } catch { }
+  }, []);
+
+  const fetchMoreConnectedUsers = useCallback(async () => {
+    if (!hasMoreConnectedRef.current || loadingMoreConnectedRef.current) return;
+    loadingMoreConnectedRef.current = true;
+    setLoadingMoreConnected(true);
+
+    try {
+      const skip = connectedUsersRef.current.length;
+      const { data } = await api.get<{ users: User[]; hasMore: boolean }>(`${FRIENDS.CONNECTED}?limit=20&skip=${skip}`);
+      const newUsers = data.users || [];
+      const hasMore = data.hasMore;
+
+      setConnectedUsers((prev) => {
+        const existingIds = new Set(prev.map((u) => u._id));
+        const filtered = newUsers.filter((u) => !existingIds.has(u._id));
+        return [...prev, ...filtered];
+      });
+      setHasMoreConnected(hasMore);
+      hasMoreConnectedRef.current = hasMore;
+    } catch (err) {
+      console.error('Failed to load more friends', err);
+    } finally {
+      loadingMoreConnectedRef.current = false;
+      setLoadingMoreConnected(false);
+    }
   }, []);
 
   const fetchMessages = useCallback(async (conversationId: string) => {
@@ -169,15 +268,40 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const activeConvRef = useRef<Conversation | null>(null);
+  activeConvRef.current = activeConversation;
+
   // ── INCOMING MESSAGE ──────────────────────────────────────────────────────────
   const handleIncomingMessage = useCallback((msg: Message) => {
-    // Move conversation to top of sidebar
+    // Move conversation to top of sidebar & update unread count
     setConversations((prev) => {
       const idx = prev.findIndex((c) => c._id === msg.conversationId);
+      const isInactive = activeConvIdRef.current !== msg.conversationId;
+      const notMyMsg   = userIdRef.current && userIdRef.current !== msg.sender._id;
+
       if (idx !== -1) {
-        const updated = { ...prev[idx], lastMessage: msg, updatedAt: msg.createdAt };
+        const currentUnread = prev[idx].unreadCount || 0;
+        const updated = {
+          ...prev[idx],
+          lastMessage: msg,
+          updatedAt: msg.createdAt,
+          unreadCount: isInactive && notMyMsg ? currentUnread + 1 : 0,
+        };
         return [updated, ...prev.filter((_, i) => i !== idx)];
       }
+
+      // If conversation is not in sidebar list, add active conversation or refresh list
+      if (activeConvRef.current && activeConvRef.current._id === msg.conversationId) {
+        const newConv: Conversation = {
+          ...activeConvRef.current,
+          lastMessage: msg,
+          updatedAt: msg.createdAt,
+          unreadCount: 0,
+        };
+        return [newConv, ...prev];
+      }
+
+      fetchConversations();
       return prev;
     });
 
@@ -208,7 +332,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         viewerId: myId,  // ← current user's ID (not sender's, not conv ID)
       });
     }
-  }, []);
+  }, [fetchConversations]);
 
   // ── HELPERS ───────────────────────────────────────────────────────────────────
   const appendMessage = useCallback((msg: Message) => {
@@ -218,13 +342,23 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         const updated = { ...prev[idx], lastMessage: msg, updatedAt: msg.createdAt };
         return [updated, ...prev.filter((_, i) => i !== idx)];
       }
+      if (activeConvRef.current && activeConvRef.current._id === msg.conversationId) {
+        const newConv: Conversation = {
+          ...activeConvRef.current,
+          lastMessage: msg,
+          updatedAt: msg.createdAt,
+          unreadCount: 0,
+        };
+        return [newConv, ...prev];
+      }
+      fetchConversations();
       return prev;
     });
     setMessages((prev) => {
       if (prev.some((m) => m._id === msg._id)) return prev;
       return [...prev, msg];
     });
-  }, []);
+  }, [fetchConversations]);
 
   const updateMessage = useCallback((msg: Message) => {
     setMessages((prev) => prev.map((m) => (m._id === msg._id ? { ...m, ...msg } : m)));
@@ -265,12 +399,26 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const setActiveConversation = useCallback((conv: Conversation | null) => {
     if (!conv) {
       activeConvIdRef.current = null;
+      activeConvRef.current = null;
       setActiveState(null);
       setMessages([]);
       return;
     }
     activeConvIdRef.current = conv._id;
+    activeConvRef.current = conv;
     setActiveState(conv);
+
+    // Clear unread count & update sidebar list if conversation has messages
+    setConversations((prev) => {
+      const exists = prev.some((c) => c._id === conv._id);
+      if (exists) {
+        return prev.map((c) => (c._id === conv._id ? { ...c, ...conv, unreadCount: 0 } : c));
+      }
+      if (conv.lastMessage) {
+        return [{ ...conv, unreadCount: 0 }, ...prev];
+      }
+      return prev;
+    });
 
     const s = socketRef.current;
 
@@ -426,6 +574,23 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         removeConversation(conversationId);
       });
 
+      socket.on('message_deleted_for_everyone', (data: Message) => {
+        setMessages((prev) =>
+          prev.map((m) => (m._id === data._id ? { ...m, ...data, isDeletedForEveryone: true, text: '', content: '' } : m))
+        );
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.lastMessage?._id === data._id) {
+              return {
+                ...c,
+                lastMessage: { ...c.lastMessage, text: 'This message was deleted', content: 'This message was deleted', isDeletedForEveryone: true },
+              };
+            }
+            return c;
+          })
+        );
+      });
+
       socket.on('friend_request', (request: FriendRequest) => {
         setPendingRequests((prev) => {
           if (prev.some((r) => r._id === request._id)) return prev;
@@ -453,6 +618,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       connectedUsers,
       fetchConversations,
       fetchConnectedUsers,
+      hasMoreConversations,
+      loadingMoreConversations,
+      fetchMoreConversations,
+      hasMoreConnectedUsers,
+      loadingMoreConnectedUsers,
+      fetchMoreConnectedUsers,
       fetchMessages,
       fetchMoreMessages,
       setActiveConversation,
@@ -475,6 +646,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       loadingMoreMessages,
       nextCursor,
       errorLoadingMore,
+      hasMoreConversations,
+      loadingMoreConversations,
+      fetchMoreConversations,
+      hasMoreConnectedUsers,
+      loadingMoreConnectedUsers,
+      fetchMoreConnectedUsers,
       onlineUsers,
       pendingRequests,
       connectedUsers,

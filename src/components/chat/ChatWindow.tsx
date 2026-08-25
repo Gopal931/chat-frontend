@@ -1,14 +1,22 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowLeft, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Loader2, Video, Phone, MoreVertical, Search, Bell, BellOff, Eraser, Ban, XCircle, User, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
 import { useMessages } from '@/hooks/useMessages';
 import { useSocket } from '@/hooks/useSocket';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
+import { useCall } from '@/contexts/CallContext';
 import UserAvatar from '@/components/shared/UserAvatar';
 import UserProfileDrawer from './UserProfileDrawer';
 import { formatLastSeen } from '@/utils/formatLastSeen';
@@ -57,14 +65,15 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
     fetchMoreMessages,
   } = useMessages(activeConversation?._id ?? null);
   const { socket } = useSocket();
+  const { initiateCall } = useCall();
 
-  const containerRef           = useRef<HTMLDivElement>(null);
-  const activeConvIdRef        = useRef<string | null>(null);
-  const prevScrollHeightRef    = useRef<number>(0);
-  const prevScrollTopRef       = useRef<number>(0);
-  const isPrependingRef        = useRef<boolean>(false);
-  const initialScrollDoneRef   = useRef<boolean>(false);
-  const prevMessageCountRef    = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const activeConvIdRef = useRef<string | null>(null);
+  const prevScrollHeightRef = useRef<number>(0);
+  const prevScrollTopRef = useRef<number>(0);
+  const isPrependingRef = useRef<boolean>(false);
+  const initialScrollDoneRef = useRef<boolean>(false);
+  const prevMessageCountRef = useRef<number>(0);
 
   const partner = activeConversation?.participants.find((p) => p._id !== user?._id);
   const displayName = activeConversation?.isGroup
@@ -77,7 +86,7 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
     if (!socket || !activeConversation || !user) return;
     socket.emit('messages_seen', { conversationId: activeConversation._id, viewerId: user._id });
   }, [activeConversation?._id, socket, user]);
-  
+
   // ── 1. Conversation switch & Initial Load ─────────────────────────────────
   useEffect(() => {
     if (!activeConversation) return;
@@ -160,39 +169,187 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
   };
 
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [muted, setMuted] = useState(false);
 
   if (!activeConversation) return <EmptyState />;
+
+  const filteredMessages = searchQuery
+    ? messages.filter((m) => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background chat-wallpaper">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/10 glass-header flex-shrink-0 z-10 shadow-sm">
-        {onBack && (
-          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 rounded-full" onClick={onBack}>
-            <ArrowLeft size={18} />
-          </Button>
-        )}
-        <div
-          onClick={() => !activeConversation.isGroup && partner && setShowProfileDrawer(true)}
-          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          <div className="relative">
-            {activeConversation.isGroup
-              ? <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center"><Users size={18} className="text-primary" /></div>
-              : <UserAvatar username={displayName} avatarUrl={partner?.avatarUrl} size="md" isOnline={!!isPartnerOnline} />
-            }
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground truncate tracking-tight">{displayName}</p>
-            <p className="text-[11px] text-muted-foreground font-medium">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 glass-header flex-shrink-0 z-10 shadow-sm">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {onBack && (
+            <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 rounded-full flex-shrink-0" onClick={onBack}>
+              <ArrowLeft size={18} />
+            </Button>
+          )}
+          <div
+            onClick={() => !activeConversation.isGroup && partner && setShowProfileDrawer(true)}
+            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            <div className="relative flex-shrink-0">
               {activeConversation.isGroup
-                ? `${activeConversation.participants.length} members`
-                : formatLastSeen(partner?.lastSeen, !!isPartnerOnline)
+                ? <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center"><Users size={18} className="text-primary" /></div>
+                : <UserAvatar username={displayName} avatarUrl={partner?.avatarUrl} size="md" isOnline={!!isPartnerOnline} />
               }
-            </p>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-foreground truncate tracking-tight">{displayName}</p>
+              <p className="text-[11px] text-muted-foreground font-medium truncate">
+                {activeConversation.isGroup
+                  ? `${activeConversation.participants.length} members`
+                  : formatLastSeen(partner?.lastSeen, !!isPartnerOnline)
+                }
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* WhatsApp-Style Action Icons & Three-Dot Dropdown */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors cursor-pointer"
+            onClick={() => {
+              if (activeConversation?.isGroup) {
+                alert('Group video calls are coming soon. 1-to-1 video calls are supported!');
+                return;
+              }
+              if (partner && activeConversation) {
+                initiateCall(
+                  { _id: partner._id, username: partner.username, avatarUrl: partner.avatarUrl },
+                  activeConversation._id,
+                  'video'
+                );
+              }
+            }}
+            title="Video call"
+          >
+            <Video size={19} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors cursor-pointer"
+            onClick={() => {
+              if (activeConversation?.isGroup) {
+                alert('Group voice calls are coming soon. 1-to-1 voice calls are supported!');
+                return;
+              }
+              if (partner && activeConversation) {
+                initiateCall(
+                  { _id: partner._id, username: partner.username, avatarUrl: partner.avatarUrl },
+                  activeConversation._id,
+                  'audio'
+                );
+              }
+            }}
+            title="Voice call"
+          >
+            <Phone size={18} />
+          </Button>
+
+          {/* Three-Dot Options Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+                title="More options"
+              >
+                <MoreVertical size={19} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl p-1.5 z-50">
+              <DropdownMenuItem
+                onClick={() => !activeConversation.isGroup && partner && setShowProfileDrawer(true)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/10 text-sm font-medium transition-colors"
+              >
+                <User size={16} className="text-primary" />
+                <span>{activeConversation.isGroup ? 'Group Info' : 'Contact Info'}</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => setShowSearch(!showSearch)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/10 text-sm font-medium transition-colors"
+              >
+                <Search size={16} className="text-indigo-400" />
+                <span>Search Messages</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => setMuted(!muted)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/10 text-sm font-medium transition-colors"
+              >
+                {muted ? <Bell size={16} className="text-amber-400" /> : <BellOff size={16} className="text-amber-400" />}
+                <span>{muted ? 'Unmute Notifications' : 'Mute Notifications'}</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="my-1 bg-white/10" />
+
+              <DropdownMenuItem
+                onClick={() => alert('Clear chat history feature coming soon')}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/10 text-sm font-medium transition-colors text-amber-500 hover:text-amber-400"
+              >
+                <Eraser size={16} />
+                <span>Clear Messages</span>
+              </DropdownMenuItem>
+
+              {!activeConversation.isGroup && (
+                <DropdownMenuItem
+                  onClick={() => alert(`Blocked ${displayName}`)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/10 text-sm font-medium transition-colors text-rose-500 hover:text-rose-400"
+                >
+                  <Ban size={16} />
+                  <span>Block {displayName}</span>
+                </DropdownMenuItem>
+              )}
+
+              {onBack && (
+                <DropdownMenuItem
+                  onClick={onBack}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/10 text-sm font-medium transition-colors text-muted-foreground"
+                >
+                  <XCircle size={16} />
+                  <span>Close Conversation</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {/* Message Search Bar */}
+      {showSearch && (
+        <div className="px-4 py-2.5 border-b border-white/10 bg-secondary/60 backdrop-blur-md flex items-center gap-2.5 animate-fade-in flex-shrink-0">
+          <Search size={16} className="text-muted-foreground flex-shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search in conversation…"
+            className="bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none flex-1"
+            autoFocus
+          />
+          {searchQuery && (
+            <span className="text-xs text-muted-foreground mr-1">
+              {filteredMessages.length} found
+            </span>
+          )}
+          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => { setShowSearch(false); setSearchQuery(''); }}>
+            <X size={14} />
+          </Button>
+        </div>
+      )}
 
       <UserProfileDrawer
         open={showProfileDrawer}
@@ -223,12 +380,12 @@ const ChatWindow: React.FC<Props> = ({ onBack }) => {
             )
             : (
               <div className="space-y-1 pb-2">
-                {messages.map((msg, i) => {
-                  const prev = messages[i - 1];
-                  const next = messages[i + 1];
-                  const showAvatar    = !prev || prev.sender._id !== msg.sender._id;
+                {filteredMessages.map((msg, i) => {
+                  const prev = filteredMessages[i - 1];
+                  const next = filteredMessages[i + 1];
+                  const showAvatar = !prev || prev.sender._id !== msg.sender._id;
                   const isLastInGroup = !next || next.sender._id !== msg.sender._id;
-                  const msgDate  = new Date(msg.createdAt).toDateString();
+                  const msgDate = new Date(msg.createdAt).toDateString();
                   const prevDate = prev ? new Date(prev.createdAt).toDateString() : null;
                   const showDate = msgDate !== prevDate;
                   return (

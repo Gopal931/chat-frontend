@@ -31,7 +31,7 @@ const ConversationItem: React.FC<Props> = ({ conversation, isActive, onClick }) 
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Delete this conversation for everyone?')) return;
+    if (!confirm('Delete this chat for yourself? Your friend relationship and their chat will remain.')) return;
     setDeleting(true);
     try { await api.delete(CONVERSATIONS.DELETE(conversation._id)); }
     catch { setDeleting(false); }
@@ -62,14 +62,23 @@ const ConversationItem: React.FC<Props> = ({ conversation, isActive, onClick }) 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-0.5">
-          <span className={cn('text-sm font-semibold truncate transition-colors', isActive ? 'text-primary font-bold' : 'text-foreground/90 group-hover:text-foreground')}>{displayName}</span>
+          <span className={cn('text-sm font-bold truncate transition-colors', isActive ? 'text-primary font-bold' : 'text-foreground group-hover:text-white')}>{displayName}</span>
           {conversation.lastMessage && (
-            <span className="text-[10px] text-muted-foreground ml-2 flex-shrink-0 font-medium">{formatTime(conversation.lastMessage.createdAt)}</span>
+            <span className={cn('text-[11px] ml-2 flex-shrink-0 font-medium', (conversation.unreadCount ?? 0) > 0 && !isActive ? 'text-primary font-bold' : 'text-muted-foreground')}>
+              {formatTime(conversation.lastMessage.createdAt)}
+            </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground truncate">
-          {lastMsg ?? <span className="italic">No messages yet</span>}
-        </p>
+        <div className="flex items-center justify-between gap-1">
+          <p className={cn('text-xs truncate flex-1', (conversation.unreadCount ?? 0) > 0 && !isActive ? 'text-foreground font-semibold' : 'text-muted-foreground')}>
+            {lastMsg ?? <span className="italic">No messages yet</span>}
+          </p>
+          {(conversation.unreadCount ?? 0) > 0 && !isActive && (
+            <span className="bg-primary text-primary-foreground font-extrabold text-[10px] min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center shadow-md flex-shrink-0 animate-pulse">
+              {conversation.unreadCount! > 99 ? '99+' : conversation.unreadCount}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Delete on hover */}
@@ -81,7 +90,7 @@ const ConversationItem: React.FC<Props> = ({ conversation, isActive, onClick }) 
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive gap-2">
-            <Trash2 size={13} /> Delete for everyone
+            <Trash2 size={13} /> Delete Chat
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
