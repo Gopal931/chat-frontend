@@ -25,6 +25,7 @@ interface CallContextType {
   endCall: () => void;
   toggleMute: () => void;
   toggleCamera: () => void;
+  switchCamera: () => Promise<void>;
 }
 
 const CallContext = createContext<CallContextType>({} as CallContextType);
@@ -243,6 +244,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+
   const toggleCamera = useCallback(() => {
     if (localStreamRef.current) {
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
@@ -252,6 +255,54 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
   }, []);
+
+  const switchCamera = useCallback(async () => {
+    if (!localStreamRef.current || callSession?.type !== 'video') return;
+
+    try {
+      const nextFacingMode = facingMode === 'user' ? 'environment' : 'user';
+      let newStream: MediaStream;
+
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: nextFacingMode } },
+        });
+      } catch {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: nextFacingMode },
+        });
+      }
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      const oldVideoTrack = localStreamRef.current.getVideoTracks()[0];
+
+      if (oldVideoTrack) {
+        oldVideoTrack.stop();
+        localStreamRef.current.removeTrack(oldVideoTrack);
+      }
+
+      localStreamRef.current.addTrack(newVideoTrack);
+
+      if (peerConnectionRef.current) {
+        const sender = peerConnectionRef.current
+          .getSenders()
+          .find((s) => s.track && s.track.kind === 'video');
+        if (sender) {
+          await sender.replaceTrack(newVideoTrack);
+        }
+      }
+
+      const updatedStream = new MediaStream([
+        ...localStreamRef.current.getAudioTracks(),
+        newVideoTrack,
+      ]);
+      localStreamRef.current = updatedStream;
+      setLocalStream(updatedStream);
+      setFacingMode(nextFacingMode);
+    } catch (err) {
+      console.error('Failed to switch camera:', err);
+    }
+  }, [facingMode, callSession]);
 
   // ── 10. Socket WebRTC Signaling Listeners ──────────────────────────────────
   useEffect(() => {
@@ -403,6 +454,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         endCall,
         toggleMute,
         toggleCamera,
+        switchCamera,
       }}
     >
       {children}

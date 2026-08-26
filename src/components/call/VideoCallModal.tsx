@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, ArrowLeft } from 'lucide-react';
+import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useCall } from '@/contexts/CallContext';
 import UserAvatar from '@/components/shared/UserAvatar';
 
@@ -12,6 +12,7 @@ export const VideoCallModal: React.FC = () => {
     isCameraOff,
     toggleMute,
     toggleCamera,
+    switchCamera,
     endCall,
     cancelCall,
   } = useCall();
@@ -167,6 +168,19 @@ export const VideoCallModal: React.FC = () => {
           <span className="text-xs text-slate-300 font-medium">
             {isCameraOff ? 'Camera On' : 'Camera Off'}
           </span>
+        </div>
+
+        {/* Switch Camera Button */}
+        <div className="flex flex-col items-center gap-1.5">
+          <button
+            type="button"
+            onClick={switchCamera}
+            className="h-14 w-14 rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer bg-white/20 hover:bg-white/30 text-white backdrop-blur-md"
+            title="Switch Camera (Front/Back)"
+          >
+            <RefreshCw size={22} />
+          </button>
+          <span className="text-xs text-slate-300 font-medium">Switch</span>
         </div>
 
         {/* End Call Button */}
