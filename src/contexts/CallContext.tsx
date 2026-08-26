@@ -10,6 +10,7 @@ import React, {
 import { useAuth } from '@/hooks/useAuth';
 import { useSocket } from '@/hooks/useSocket';
 import { CallSession, CallType, CallUser } from '@/types/call';
+import { ringtoneManager } from '@/utils/ringtone';
 
 interface CallContextType {
   callSession: CallSession | null;
@@ -91,7 +92,18 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsMuted(false);
     setIsCameraOff(false);
     setIsMinimized(false);
+    ringtoneManager.stop();
   }, []);
+
+  // Ringtone playback effect
+  useEffect(() => {
+    if (incomingCall && incomingCall.status === 'RINGING') {
+      ringtoneManager.play();
+    } else {
+      ringtoneManager.stop();
+    }
+    return () => ringtoneManager.stop();
+  }, [incomingCall]);
 
   // ── 2. Create RTCPeerConnection ───────────────────────────────────────────
   const createPeerConnection = useCallback((targetUserId: string, callId: string) => {

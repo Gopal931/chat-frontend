@@ -47,3 +47,8 @@ export const FRIENDS = {
 export const CALLS = {
   GET_ALL: '/calls',
 } as const;
+
+export const PUSH = {
+  VAPID_KEY: '/push/vapid-key',
+  SUBSCRIBE: '/push/subscribe',
+} as const;

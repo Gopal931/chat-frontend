@@ -25,9 +25,13 @@ import VoiceCallModal from '@/components/call/VoiceCallModal';
 import VideoCallModal from '@/components/call/VideoCallModal';
 
 import MinimizedCallBar from '@/components/call/MinimizedCallBar';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
-const AppRoutes = () => (
-  <Routes>
+const AppRoutes = () => {
+  usePushNotifications();
+
+  return (
+    <Routes>
     <Route path="/" element={<Navigate to="/chat" replace />} />
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
@@ -53,7 +57,8 @@ const AppRoutes = () => (
     />
     <Route path="*" element={<Navigate to="/chat" replace />} />
   </Routes>
-);
+  );
+};
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
