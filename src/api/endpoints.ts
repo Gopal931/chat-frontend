@@ -43,3 +43,7 @@ export const FRIENDS = {
   DECLINE:(id: string) => `/friends/decline/${id}`,
   CONNECTED:'/friends/connected',
 } as const;
+
+export const CALLS = {
+  GET_ALL: '/calls',
+} as const;

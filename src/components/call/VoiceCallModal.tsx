@@ -8,6 +8,8 @@ export const VoiceCallModal: React.FC = () => {
     callSession,
     remoteStream,
     isMuted,
+    isMinimized,
+    minimizeCall,
     toggleMute,
     endCall,
     cancelCall,
@@ -27,7 +29,7 @@ export const VoiceCallModal: React.FC = () => {
     }
   }, [remoteStream, isSpeakerOn]);
 
-  if (!callSession || callSession.type !== 'audio') return null;
+  if (!callSession || callSession.type !== 'audio' || isMinimized) return null;
 
   const formatDuration = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -71,7 +73,7 @@ export const VoiceCallModal: React.FC = () => {
       <div className="flex items-center justify-between p-4 border-b border-white/10 glass-header">
         <button
           type="button"
-          onClick={handleEndOrCancel}
+          onClick={minimizeCall}
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
         >
           <ArrowLeft size={18} />

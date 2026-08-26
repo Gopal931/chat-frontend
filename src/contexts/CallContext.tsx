@@ -18,6 +18,7 @@ interface CallContextType {
   remoteStream: MediaStream | null;
   isMuted: boolean;
   isCameraOff: boolean;
+  isMinimized: boolean;
   initiateCall: (partner: CallUser, conversationId: string, type: CallType) => Promise<void>;
   acceptCall: () => Promise<void>;
   rejectCall: () => void;
@@ -26,6 +27,8 @@ interface CallContextType {
   toggleMute: () => void;
   toggleCamera: () => void;
   switchCamera: () => Promise<void>;
+  minimizeCall: () => void;
+  maximizeCall: () => void;
 }
 
 const CallContext = createContext<CallContextType>({} as CallContextType);
@@ -48,6 +51,10 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  const minimizeCall = useCallback(() => setIsMinimized(true), []);
+  const maximizeCall = useCallback(() => setIsMinimized(false), []);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -83,6 +90,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIncomingCall(null);
     setIsMuted(false);
     setIsCameraOff(false);
+    setIsMinimized(false);
   }, []);
 
   // ── 2. Create RTCPeerConnection ───────────────────────────────────────────
@@ -447,6 +455,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         remoteStream,
         isMuted,
         isCameraOff,
+        isMinimized,
         initiateCall,
         acceptCall,
         rejectCall,
@@ -455,6 +464,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         toggleMute,
         toggleCamera,
         switchCamera,
+        minimizeCall,
+        maximizeCall,
       }}
     >
       {children}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff, Bell, Settings, Loader2 } from 'lucide-react';
+import { Search, LogOut, Plus, MessageSquare, Users, Wifi, WifiOff, Bell, Settings, Loader2, Phone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/hooks/useConversations';
 import { useFriends } from '@/hooks/useFriends';
@@ -15,6 +15,7 @@ import ConversationItem from './ConversationItem';
 import CreateGroupModal from './CreateGroupModal';
 import FriendRequestBadge from './FriendRequestBadge';
 import PeopleTab from './PeopleTab';
+import CallsTab from './CallsTab';
 import UserAvatar from '@/components/shared/UserAvatar';
 import UserProfileDrawer from './UserProfileDrawer';
 import NewChatModal from './NewChatModal';
@@ -25,7 +26,7 @@ interface Props {
   className?: string;
 }
 
-type Tab = 'chats' | 'people' | 'Requests';
+type Tab = 'chats' | 'people' | 'Requests' | 'calls';
 
 const SkeletonItem = () => (
   <div className="flex items-center gap-3 px-3 py-3 animate-pulse">
@@ -147,7 +148,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
 
         {/* Tabs */}
         <div className="flex p-1.5 gap-1 border-b border-white/10 bg-secondary/30">
-          {(['chats', 'people', 'Requests'] as Tab[]).map((t) => (
+          {(['chats', 'people', 'Requests', 'calls'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -158,7 +159,15 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
                   : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
               )}
             >
-              {t === 'chats' ? <MessageSquare size={13} /> : t === 'Requests' ? <Bell size={13} /> : <Users size={13} />}
+              {t === 'chats' ? (
+                <MessageSquare size={13} />
+              ) : t === 'Requests' ? (
+                <Bell size={13} />
+              ) : t === 'calls' ? (
+                <Phone size={13} />
+              ) : (
+                <Users size={13} />
+              )}
               {t}
               {t === 'chats' && filteredConvs.length > 0 && (
                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-white/20 text-white border-none">{filteredConvs.length}</Badge>
@@ -249,6 +258,7 @@ const Sidebar: React.FC<Props> = ({ onSelectConversation, className }) => {
           )}
 
           {tab === 'people' && <PeopleTab />}
+          {tab === 'calls' && <CallsTab />}
         </ScrollArea>
 
         {/* Floating WhatsApp-Style "+" New Chat FAB Button */}

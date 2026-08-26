@@ -24,6 +24,8 @@ import IncomingCallModal from '@/components/call/IncomingCallModal';
 import VoiceCallModal from '@/components/call/VoiceCallModal';
 import VideoCallModal from '@/components/call/VideoCallModal';
 
+import MinimizedCallBar from '@/components/call/MinimizedCallBar';
+
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Navigate to="/chat" replace />} />
@@ -41,6 +43,7 @@ const AppRoutes = () => (
                   <IncomingCallModal />
                   <VoiceCallModal />
                   <VideoCallModal />
+                  <MinimizedCallBar />
                 </TooltipProvider>
               </CallProvider>
             </SocketProvider>

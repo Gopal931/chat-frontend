@@ -10,6 +10,8 @@ export const VideoCallModal: React.FC = () => {
     remoteStream,
     isMuted,
     isCameraOff,
+    isMinimized,
+    minimizeCall,
     toggleMute,
     toggleCamera,
     switchCamera,
@@ -34,7 +36,7 @@ export const VideoCallModal: React.FC = () => {
     }
   }, [remoteStream]);
 
-  if (!callSession || callSession.type !== 'video') return null;
+  if (!callSession || callSession.type !== 'video' || isMinimized) return null;
 
   const formatDuration = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -78,7 +80,7 @@ export const VideoCallModal: React.FC = () => {
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
         <button
           type="button"
-          onClick={handleEndOrCancel}
+          onClick={minimizeCall}
           className="flex items-center gap-2 text-sm text-slate-200 hover:text-white transition-colors cursor-pointer"
         >
           <ArrowLeft size={18} />
